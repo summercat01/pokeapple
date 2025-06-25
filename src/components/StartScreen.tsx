@@ -7,7 +7,7 @@ export default function StartScreen() {
   const [gameStarted, setGameStarted] = useState(false)
 
   if (gameStarted) {
-    return <GameBoard onBackToStart={() => setGameStarted(false)} />
+    return <GameBoard />
   }
 
   return (
