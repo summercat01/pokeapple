@@ -50,6 +50,6 @@ export function getPokemonByGeneration(generation: 1 | 2 | 3 | 4): Pokemon[] {
 }
 
 // 특정 세대만 사용하도록 설정
-export function setGameGeneration(generation: 1 | 2 | 3 | 4 | 'all') {
+export function setGameGeneration(_generation: 1 | 2 | 3 | 4 | 'all') {
   // 나중에 구현 - 게임에서 사용할 세대 선택
 }

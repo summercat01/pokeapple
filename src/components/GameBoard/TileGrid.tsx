@@ -1,6 +1,5 @@
 import React from 'react'
 import { GameTile } from '@/types/game'
-import { POKEMON_TYPE_COLORS } from '@/types/pokemon'
 
 interface TileGridProps {
   board: GameTile[][]
