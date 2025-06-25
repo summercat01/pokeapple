@@ -24,3 +24,41 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* 평셀 아트 스타일링 */
+.pixel-art {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -webkit-optimize-contrast;
+  -ms-interpolation-mode: nearest-neighbor;
+}
+
+/* 전체 이미지에 대한 평셀 아트 설정 */
+img[src*="/icons/"],
+img[src*="githubusercontent.com"] {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -webkit-optimize-contrast;
+  -ms-interpolation-mode: nearest-neighbor;
+  /* 하드웨어 가속 활용 */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000;
+  /* 안티앨리어싱 비활성화 */
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: unset;
+}
+
+/* 포켓몬 실루엣 효과 */
+.pokemon-silhouette {
+  filter: brightness(0) saturate(100%) invert(85%) sepia(78%) saturate(359%) hue-rotate(7deg) brightness(108%) contrast(101%);
+  /* 노란색으로 변환 */
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  image-rendering: -webkit-crisp-edges;
+}

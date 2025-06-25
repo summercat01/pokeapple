@@ -1,7 +1,7 @@
 export type PokemonType = 
   | 'normal' | 'fire' | 'water' | 'electric' | 'grass' | 'ice'
   | 'fighting' | 'poison' | 'ground' | 'flying' | 'psychic' | 'bug'
-  | 'rock' | 'ghost' | 'dragon' | 'dark' | 'steel' | 'fairy'
+  | 'rock' | 'ghost' | 'dragon' | 'dark' | 'steel'
 
 export interface Pokemon {
   id: number
@@ -28,5 +28,4 @@ export const POKEMON_TYPE_COLORS: Record<PokemonType, string> = {
   dragon: '#7038F8',
   dark: '#705848',
   steel: '#B8B8D0',
-  fairy: '#EE99AC',
 }

@@ -93,21 +93,113 @@ export default function TileGrid({ board }: TileGridProps) {
               key={tile.id}
               data-tile-id={tile.id}
               className={`
-                w-15 h-15 rounded-lg flex items-center justify-center text-sm font-bold transition-all duration-200
+                w-15 h-15 rounded-lg flex items-center justify-center transition-all duration-200 overflow-visible relative
                 ${
                   tile.isSelected 
-                    ? 'border-4 border-yellow-300 scale-105' 
-                    : 'border-2 border-gray-300'
+                    ? 'scale-105' 
+                    : ''
                 }
               `}
               style={{
-                backgroundColor: POKEMON_TYPE_COLORS[tile.pokemon.types[0]],
-                color: 'white',
-                textShadow: '1px 1px 2px rgba(0,0,0,0.8)',
                 ...getAnimationStyle()
               }}
             >
-              {tile.pokemon.name.slice(0, 3)}
+              {/* 선택된 경우 뒤에 노란색 실루엣 */}
+              {tile.isSelected && (
+                <>
+                  <img 
+                    src={tile.pokemon.sprite || 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png'} 
+                    alt={`${tile.pokemon.name} silhouette`}
+                    className="w-16 h-16 object-contain pixel-art absolute pokemon-silhouette"
+                    style={{
+                      transform: 'translate(-2px, -2px)',
+                      zIndex: 1
+                    }}
+                    draggable={false}
+                  />
+                  <img 
+                    src={tile.pokemon.sprite || 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png'} 
+                    alt={`${tile.pokemon.name} silhouette`}
+                    className="w-16 h-16 object-contain pixel-art absolute pokemon-silhouette"
+                    style={{
+                      transform: 'translate(2px, -2px)',
+                      zIndex: 1
+                    }}
+                    draggable={false}
+                  />
+                  <img 
+                    src={tile.pokemon.sprite || 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png'} 
+                    alt={`${tile.pokemon.name} silhouette`}
+                    className="w-16 h-16 object-contain pixel-art absolute pokemon-silhouette"
+                    style={{
+                      transform: 'translate(-2px, 2px)',
+                      zIndex: 1
+                    }}
+                    draggable={false}
+                  />
+                  <img 
+                    src={tile.pokemon.sprite || 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png'} 
+                    alt={`${tile.pokemon.name} silhouette`}
+                    className="w-16 h-16 object-contain pixel-art absolute pokemon-silhouette"
+                    style={{
+                      transform: 'translate(2px, 2px)',
+                      zIndex: 1
+                    }}
+                    draggable={false}
+                  />
+                  <img 
+                    src={tile.pokemon.sprite || 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png'} 
+                    alt={`${tile.pokemon.name} silhouette`}
+                    className="w-16 h-16 object-contain pixel-art absolute pokemon-silhouette"
+                    style={{
+                      transform: 'translate(0px, -2px)',
+                      zIndex: 1
+                    }}
+                    draggable={false}
+                  />
+                  <img 
+                    src={tile.pokemon.sprite || 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png'} 
+                    alt={`${tile.pokemon.name} silhouette`}
+                    className="w-16 h-16 object-contain pixel-art absolute pokemon-silhouette"
+                    style={{
+                      transform: 'translate(0px, 2px)',
+                      zIndex: 1
+                    }}
+                    draggable={false}
+                  />
+                  <img 
+                    src={tile.pokemon.sprite || 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png'} 
+                    alt={`${tile.pokemon.name} silhouette`}
+                    className="w-16 h-16 object-contain pixel-art absolute pokemon-silhouette"
+                    style={{
+                      transform: 'translate(-2px, 0px)',
+                      zIndex: 1
+                    }}
+                    draggable={false}
+                  />
+                  <img 
+                    src={tile.pokemon.sprite || 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png'} 
+                    alt={`${tile.pokemon.name} silhouette`}
+                    className="w-16 h-16 object-contain pixel-art absolute pokemon-silhouette"
+                    style={{
+                      transform: 'translate(2px, 0px)',
+                      zIndex: 1
+                    }}
+                    draggable={false}
+                  />
+                </>
+              )}
+              
+              {/* 메인 포켓몬 이미지 */}
+              <img 
+                src={tile.pokemon.sprite || 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png'} 
+                alt={tile.pokemon.name}
+                className="w-15 h-15 object-contain pixel-art relative"
+                style={{
+                  zIndex: 2
+                }}
+                draggable={false}
+              />
             </div>
           )
         })}
