@@ -13,7 +13,7 @@ export default function TileGrid({ board }: TileGridProps) {
       {board.map((row, rowIndex) => (
         <React.Fragment key={`row-${rowIndex}`}>
           {/* 해당 행의 16개 타일들 */}
-          {row.map((tile, _) => {
+          {row.map(tile => {
             // 빈 타일인 경우 마우스 이벤트 통과
             if (tile.isEmpty) {
               return (
