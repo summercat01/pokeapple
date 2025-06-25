@@ -5,21 +5,15 @@ import { GameState } from '@/types/game'
 import { createInitialGameState } from '@/lib/game/gameLogic'
 import { useAudio } from '@/hooks/useAudio'
 import TileGrid from './TileGrid'
-import ScoreDisplay from './ScoreDisplay'
-
-interface GameBoardProps {
-  onBackToStart?: () => void
-}
 
 type GamePhase = 'main' | 'countdown' | 'playing' | 'gameOver'
 
-export default function GameBoard({ onBackToStart }: GameBoardProps) {
+export default function GameBoard() {
   const [gameState, setGameState] = useState<GameState | null>(null)
   const [gamePhase, setGamePhase] = useState<GamePhase>('main')
   const [countdownNumber, setCountdownNumber] = useState(3)
   const [timeLeft, setTimeLeft] = useState(120) // 120초 타이머 다시 추가
   const [isMusicEnabled, setIsMusicEnabled] = useState(true)
-  const [musicVolume, setMusicVolume] = useState(0.3)
   
   // 배경음악 훅
   const backgroundMusic = useAudio('/background-music.mp3', { 
@@ -123,12 +117,6 @@ export default function GameBoard({ onBackToStart }: GameBoardProps) {
       }
       setIsMusicEnabled(true)
     }
-  }
-  
-  // 음량 조절 함수
-  const handleVolumeChange = (newVolume: number) => {
-    setMusicVolume(newVolume)
-    backgroundMusic.setVolume(newVolume)
   }
 
   // 드래그 함수들

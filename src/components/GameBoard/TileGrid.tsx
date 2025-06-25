@@ -13,7 +13,7 @@ export default function TileGrid({ board }: TileGridProps) {
       {board.map((row, rowIndex) => (
         <React.Fragment key={`row-${rowIndex}`}>
           {/* 해당 행의 16개 타일들 */}
-          {row.map((tile, colIndex) => {
+          {row.map((tile, _) => {
             // 빈 타일인 경우 마우스 이벤트 통과
             if (tile.isEmpty) {
               return (
@@ -27,10 +27,10 @@ export default function TileGrid({ board }: TileGridProps) {
           
           // 애니메이션 스타일 계산
           const getAnimationStyle = () => {
-            let transform = ''
-            let transition = 'all 0.3s ease-out'
-            let opacity = 1
-            let zIndex = 1
+            const transform = ''
+            const transition = 'all 0.3s ease-out'
+            const opacity = 1
+            const zIndex = 1
             
             if (tile.isRemoving && tile.bounceX !== undefined && tile.bounceY !== undefined) {
               // 포물선 애니메이션 - 일정한 속도로
