@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { useAudio } from '@/hooks/useAudio'
 import { GamePhase } from './useGameState'
 
@@ -29,43 +29,43 @@ export function useGameAudio() {
   })
 
   // 배경음악 시작
-  const startBackgroundMusic = () => {
+  const startBackgroundMusic = useCallback(() => {
     if (isMusicEnabled) {
       backgroundMusic.play()
     }
-  }
+  }, [isMusicEnabled, backgroundMusic])
 
   // 배경음악 정지
-  const stopBackgroundMusic = () => {
+  const stopBackgroundMusic = useCallback(() => {
     backgroundMusic.pause()
     if (backgroundMusic.audio) {
       backgroundMusic.audio.currentTime = 0
     }
-  }
+  }, [backgroundMusic])
 
   // 성공 효과음 재생
-  const playSuccessSound = () => {
+  const playSuccessSound = useCallback(() => {
     if (isMusicEnabled) {
       successSound.play()
     }
-  }
+  }, [isMusicEnabled, successSound])
 
   // 실패 효과음 재생
-  const playFailSound = () => {
+  const playFailSound = useCallback(() => {
     if (isMusicEnabled) {
       failSound.play()
     }
-  }
+  }, [isMusicEnabled, failSound])
 
   // 게임오버 효과음 재생
-  const playGameOverSound = () => {
+  const playGameOverSound = useCallback(() => {
     if (isMusicEnabled) {
       gameOverSound.play()
     }
-  }
+  }, [isMusicEnabled, gameOverSound])
 
   // 음악 토글
-  const toggleMusic = (gamePhase: GamePhase) => {
+  const toggleMusic = useCallback((gamePhase: GamePhase) => {
     if (isMusicEnabled) {
       backgroundMusic.pause()
       setIsMusicEnabled(false)
@@ -75,9 +75,9 @@ export function useGameAudio() {
       }
       setIsMusicEnabled(true)
     }
-  }
+  }, [isMusicEnabled, backgroundMusic])
 
-  return {
+  return useMemo(() => ({
     isMusicEnabled,
     startBackgroundMusic,
     stopBackgroundMusic,
@@ -85,5 +85,13 @@ export function useGameAudio() {
     playFailSound,
     playGameOverSound,
     toggleMusic
-  }
+  }), [
+    isMusicEnabled,
+    startBackgroundMusic,
+    stopBackgroundMusic,
+    playSuccessSound,
+    playFailSound,
+    playGameOverSound,
+    toggleMusic
+  ])
 } 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { GameMode, GAME_MODE_CONFIGS, GameTile } from '@/types/game'
 import { Pokemon } from '@/types/pokemon'
 import TileGrid from './TileGrid'
@@ -23,16 +23,18 @@ export default function GameBoard({ initialMode = 'normal' }: GameBoardProps) {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const [dragEnd, setDragEnd] = useState({ x: 0, y: 0 })
 
+  // 시간 종료 핸들러 메모화
+  const handleTimeUp = useCallback(async () => {
+    await gameState.endGame()
+    audio.stopBackgroundMusic()
+    audio.playGameOverSound()
+  }, [gameState.endGame, audio])
+
   // 타이머 훅
   useGameTimer({
     gamePhase: gameState.gamePhase,
-    timeLeft: gameState.timeLeft,
     setTimeLeft: gameState.setTimeLeft,
-    onTimeUp: async () => {
-      await gameState.endGame()
-      audio.stopBackgroundMusic()
-      audio.playGameOverSound()
-    }
+    onTimeUp: handleTimeUp
   })
 
   // 게임 시작 핸들러

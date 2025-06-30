@@ -1,30 +1,35 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { GamePhase } from './useGameState'
 
 interface UseGameTimerProps {
   gamePhase: GamePhase
-  timeLeft: number
   setTimeLeft: React.Dispatch<React.SetStateAction<number>>
   onTimeUp: () => void
 }
 
-export function useGameTimer({ gamePhase, timeLeft, setTimeLeft, onTimeUp }: UseGameTimerProps) {
+export function useGameTimer({ gamePhase, setTimeLeft, onTimeUp }: UseGameTimerProps) {
+  const onTimeUpRef = useRef(onTimeUp)
+  
+  // onTimeUp 콜백을 최신으로 유지
   useEffect(() => {
-    if (gamePhase === 'playing' && timeLeft > 0) {
+    onTimeUpRef.current = onTimeUp
+  }, [onTimeUp])
+
+  useEffect(() => {
+    if (gamePhase === 'playing') {
       const timer = setInterval(() => {
         setTimeLeft(prev => {
-          const nextTime = prev - 1
-          if (nextTime <= 0) {
-            onTimeUp()
+          if (prev <= 1) {
+            onTimeUpRef.current()
             return 0
           }
-          return nextTime
+          return prev - 1
         })
       }, 1000)
 
       return () => clearInterval(timer)
     }
-  }, [gamePhase, timeLeft, setTimeLeft, onTimeUp])
+  }, [gamePhase, setTimeLeft])
 } 
