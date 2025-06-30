@@ -124,11 +124,11 @@ export default function GameBoard({ initialMode = 'normal' }: GameBoardProps) {
     })
     
     if (selectedTiles.length >= 2) {
-      // 같은 타입인지 확인
+      // 같은 타입인지 확인 - 모든 타일이 공통된 하나의 타입을 가져야 함
       const firstTileTypes = selectedTiles[0].pokemon.types
       
-      const allSameType = selectedTiles.every(tile => {
-        return tile.pokemon.types.some(type => firstTileTypes.includes(type))
+      const allSameType = firstTileTypes.some(type => {
+        return selectedTiles.every(tile => tile.pokemon.types.includes(type))
       })
       
       if (allSameType) {

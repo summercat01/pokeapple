@@ -78,95 +78,18 @@ const TypeHintedTile = memo(({ tile, showTypeHints, isShuffling = false, dragInf
         ...getAnimationStyle()
       }}
     >
-      {/* 타입 힌트를 위한 테두리 이미지들 (초보자 모드에서만) */}
+      {/* 타입 힌트 배경 (초보자 모드에서만) */}
       {showTypeHints && (
-        <>
-          {tile.pokemon.types.length === 1 ? (
-            // 단일 타입: 8방향 오프셋으로 테두리 효과 (더 두껍게)
-            [
-              { x: 3, y: 0 }, { x: -3, y: 0 }, { x: 0, y: 3 }, { x: 0, y: -3 },
-              { x: 2, y: 2 }, { x: -2, y: -2 }, { x: 2, y: -2 }, { x: -2, y: 2 },
-              { x: 2, y: 0 }, { x: -2, y: 0 }, { x: 0, y: 2 }, { x: 0, y: -2 },
-              { x: 1, y: 1 }, { x: -1, y: -1 }, { x: 1, y: -1 }, { x: -1, y: 1 }
-            ].map((offset, index) => (
-              <div
-                key={`outline-${index}`}
-                className="w-15 h-15 absolute"
-                style={{
-                  transform: `translate(${offset.x}px, ${offset.y}px)`,
-                  zIndex: 0,
-                  backgroundColor: POKEMON_TYPE_COLORS[tile.pokemon.types[0]],
-                  maskImage: `url(${tile.pokemon.sprite || 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png'})`,
-                  maskSize: 'contain',
-                  maskRepeat: 'no-repeat',
-                  maskPosition: 'center',
-                  WebkitMaskImage: `url(${tile.pokemon.sprite || 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png'})`,
-                  WebkitMaskSize: 'contain',
-                  WebkitMaskRepeat: 'no-repeat',
-                  WebkitMaskPosition: 'center'
-                }}
-              />
-            ))
-          ) : (
-            // 복합 타입: 두 색상을 섞은 테두리
-            [
-              // 첫 번째 타입 (왼쪽 절반)
-              ...[ 
-                { x: -3, y: 0 }, { x: -2, y: 0 }, { x: -1, y: 0 },
-                { x: -3, y: -1 }, { x: -2, y: -1 }, { x: -1, y: -1 },
-                { x: -3, y: 1 }, { x: -2, y: 1 }, { x: -1, y: 1 },
-                { x: -3, y: -2 }, { x: -2, y: -2 }, { x: -1, y: -2 },
-                { x: -3, y: 2 }, { x: -2, y: 2 }, { x: -1, y: 2 }
-              ].map((offset, index) => (
-                <div
-                  key={`outline1-${index}`}
-                  className="w-15 h-15 absolute"
-                  style={{
-                    transform: `translate(${offset.x}px, ${offset.y}px)`,
-                    zIndex: 0,
-                    backgroundColor: POKEMON_TYPE_COLORS[tile.pokemon.types[0]],
-                    maskImage: `url(${tile.pokemon.sprite || 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png'})`,
-                    maskSize: 'contain',
-                    maskRepeat: 'no-repeat',
-                    maskPosition: 'center',
-                    WebkitMaskImage: `url(${tile.pokemon.sprite || 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png'})`,
-                    WebkitMaskSize: 'contain',
-                    WebkitMaskRepeat: 'no-repeat',
-                    WebkitMaskPosition: 'center',
-                    clipPath: 'polygon(0% 0%, 50% 0%, 50% 100%, 0% 100%)' // 왼쪽 절반만
-                  }}
-                />
-              )),
-              // 두 번째 타입 (오른쪽 절반)
-              ...[ 
-                { x: 3, y: 0 }, { x: 2, y: 0 }, { x: 1, y: 0 },
-                { x: 3, y: -1 }, { x: 2, y: -1 }, { x: 1, y: -1 },
-                { x: 3, y: 1 }, { x: 2, y: 1 }, { x: 1, y: 1 },
-                { x: 3, y: -2 }, { x: 2, y: -2 }, { x: 1, y: -2 },
-                { x: 3, y: 2 }, { x: 2, y: 2 }, { x: 1, y: 2 }
-              ].map((offset, index) => (
-                <div
-                  key={`outline2-${index}`}
-                  className="w-15 h-15 absolute"
-                  style={{
-                    transform: `translate(${offset.x}px, ${offset.y}px)`,
-                    zIndex: 0,
-                    backgroundColor: POKEMON_TYPE_COLORS[tile.pokemon.types[1]],
-                    maskImage: `url(${tile.pokemon.sprite || 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png'})`,
-                    maskSize: 'contain',
-                    maskRepeat: 'no-repeat',
-                    maskPosition: 'center',
-                    WebkitMaskImage: `url(${tile.pokemon.sprite || 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png'})`,
-                    WebkitMaskSize: 'contain',
-                    WebkitMaskRepeat: 'no-repeat',
-                    WebkitMaskPosition: 'center',
-                    clipPath: 'polygon(50% 0%, 100% 0%, 100% 100%, 50% 100%)' // 오른쪽 절반만
-                  }}
-                />
-              ))
-            ]
-          )}
-        </>
+        <div 
+          className="w-15 h-15 rounded-lg absolute"
+          style={{
+            zIndex: 0,
+            background: tile.pokemon.types.length === 1 
+              ? POKEMON_TYPE_COLORS[tile.pokemon.types[0]]
+              : `linear-gradient(45deg, ${POKEMON_TYPE_COLORS[tile.pokemon.types[0]]} 50%, ${POKEMON_TYPE_COLORS[tile.pokemon.types[1]]} 50%)`,
+            opacity: 0.3
+          }}
+        />
       )}
 
       {/* 선택된 경우 또는 드래그 중 선택된 경우 뒤에 노란색 실루엣 */}
