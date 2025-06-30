@@ -4,6 +4,7 @@ import { GameMode } from '@/types/game'
 import UserStatus from '@/components/auth/UserStatus'
 import AuthModal from '@/components/auth/AuthModal'
 import RankingSidebar from './RankingSidebar'
+import packageJson from '../../../package.json'
 
 interface GameOverlaysProps {
   gamePhase: GamePhase
@@ -61,6 +62,16 @@ export default function GameOverlays({
             {/* UserStatus - 오른쪽 상단에 절대 위치 */}
             <div className="absolute top-4 right-4 z-20">
               <UserStatus onLoginClick={handleLoginClick} />
+            </div>
+
+            {/* Version - 오른쪽 하단에 절대 위치 */}
+            <div className="absolute bottom-4 right-4 z-20">
+              <span 
+                className="text-sm font-semibold px-2 py-1 rounded"
+                style={{ color: '#ff3603' }}
+              >
+                v{packageJson.version}
+              </span>
             </div>
 
             <div className="text-center">
