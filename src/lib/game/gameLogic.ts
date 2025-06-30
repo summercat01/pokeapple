@@ -1,5 +1,5 @@
 import { GameTile, GameState, GameConfig, GameMode, GAME_MODE_CONFIGS } from '@/types/game'
-import { GAME_POKEMON } from '../pokemon/generations/gen1/pokemonData'
+import { GAME_POKEMON } from '../pokemon'
 
 // 16x9 게임 설정 (오른쪽 2열은 UI 영역)
 export const GAME_CONFIG: GameConfig = {

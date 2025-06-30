@@ -1,19 +1,19 @@
 // 모든 세대 포켓몬 데이터를 통합하는 메인 파일
 import { Pokemon, PokemonType } from '@/types/pokemon'
 import { GAME_POKEMON as GEN1_POKEMON } from './generations/gen1/pokemonData'
-// 나중에 추가될 세대들
-// import { GAME_POKEMON as GEN2_POKEMON } from './generations/gen2/pokemonData'
-// import { GAME_POKEMON as GEN3_POKEMON } from './generations/gen3/pokemonData'
-// import { GAME_POKEMON as GEN4_POKEMON } from './generations/gen4/pokemonData'
+import { GAME_POKEMON as GEN2_POKEMON } from './generations/gen2/pokemonData'
+import { GAME_POKEMON as GEN3_POKEMON } from './generations/gen3/pokemonData'
+import { GAME_POKEMON as GEN4_POKEMON } from './generations/gen4/pokemonData'
 
 // 모든 포켓몬 데이터 통합
 export const ALL_POKEMON: Pokemon[] = [
   ...GEN1_POKEMON,
-  // 나중에 추가될 세대들
-  // ...GEN2_POKEMON,
-  // ...GEN3_POKEMON,
-  // ...GEN4_POKEMON,
+  ...GEN2_POKEMON,
+  ...GEN3_POKEMON,
+  ...GEN4_POKEMON,
 ]
+
+
 
 // 현재 게임에서 사용할 포켓몬 (설정으로 제어 가능)
 export const GAME_POKEMON: Pokemon[] = ALL_POKEMON
@@ -38,12 +38,12 @@ export function getPokemonByGeneration(generation: 1 | 2 | 3 | 4): Pokemon[] {
   switch (generation) {
     case 1:
       return GEN1_POKEMON
-    // case 2:
-    //   return GEN2_POKEMON
-    // case 3:
-    //   return GEN3_POKEMON
-    // case 4:
-    //   return GEN4_POKEMON
+    case 2:
+      return GEN2_POKEMON
+    case 3:
+      return GEN3_POKEMON
+    case 4:
+      return GEN4_POKEMON
     default:
       return GEN1_POKEMON
   }
