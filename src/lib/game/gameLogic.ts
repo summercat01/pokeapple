@@ -1,81 +1,71 @@
-import { GameTile, GameState, GameConfig } from '@/types/game'
-import { getRandomPokemon, GAME_POKEMON } from '../pokemon'
+import { GameTile, GameState, GameConfig, GameMode, GAME_MODE_CONFIGS } from '@/types/game'
+import { GAME_POKEMON } from '../pokemon/generations/gen1/pokemonData'
 
 // 16x9 게임 설정 (오른쪽 2열은 UI 영역)
 export const GAME_CONFIG: GameConfig = {
   rows: 9,
   cols: 16,
-  timeLimit: 60
+  timeLimit: 120,
+  mode: 'normal'
 }
 
-// 게임 보드 생성 - 각 포켓몬 한 번씩만 사용 (완전 중복 방지)
-export function createGameBoard(): GameTile[][] {
-  const board: GameTile[][] = []
-  
-  // 필요한 포켓몬 수 계산 (16 x 9 = 144개)
-  const totalTiles = GAME_CONFIG.rows * GAME_CONFIG.cols
-  
-  // 사용 가능한 포켓몬 목록 복사 (원본 보존)
-  const availablePokemon = [...GAME_POKEMON]
-  
-  console.log(`보드 생성 설정:`);
-  console.log(`- 총 타일: ${totalTiles}개`);
-  console.log(`- 사용 가능한 포켓몬: ${GAME_POKEMON.length}개`);
-  console.log(`- 각 포켓몬 사용 횟수: 1회 (완전 중복 방지)`);
-  
-  // 포켓몬이 부족한 경우 경고
-  if (availablePokemon.length < totalTiles) {
-    console.warn(`포켓몬 수 부족: 필요 ${totalTiles}개, 보유 ${availablePokemon.length}개`);
-    console.warn('부족한 타일은 랜덤 포켓몬으로 채워집니다.');
+// Fisher-Yates 셔플 알고리즘
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array]
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
   }
+  return shuffled
+}
+
+// 모드별 게임 보드 생성 (중복 포켓몬 방지)
+export function createGameBoard(mode: GameMode = 'normal'): GameTile[][] {
+  const config = GAME_MODE_CONFIGS[mode]
+  const board: GameTile[][] = []
+  const totalTiles = config.rows * config.cols
   
-  for (let row = 0; row < GAME_CONFIG.rows; row++) {
+  // 전체 포켓몬 목록을 셔플하여 중복 없이 선택
+  const shuffledPokemon = shuffleArray(GAME_POKEMON)
+  
+  // 필요한 만큼만 포켓몬 선택 (보드 크기만큼)
+  const selectedPokemon = shuffledPokemon.slice(0, totalTiles)
+  
+  let pokemonIndex = 0
+  
+  for (let row = 0; row < config.rows; row++) {
     board[row] = []
-    for (let col = 0; col < GAME_CONFIG.cols; col++) {
-      let pokemon
-      
-      if (availablePokemon.length > 0) {
-        // 남은 포켓몬 중에서 랜덤 선택
-        const randomIndex = Math.floor(Math.random() * availablePokemon.length)
-        pokemon = availablePokemon[randomIndex]
-        
-        // 사용된 포켓몬 제거 (중복 방지)
-        availablePokemon.splice(randomIndex, 1)
-      } else {
-        // 포켓몬이 부족한 경우 전체 목록에서 랜덤 선택
-        pokemon = GAME_POKEMON[Math.floor(Math.random() * GAME_POKEMON.length)]
-        console.warn(`포켓몬 부족으로 중복 생성: ${pokemon.name}`);
-      }
-      
+    for (let col = 0; col < config.cols; col++) {
       board[row][col] = {
         id: `${row}-${col}`,
-        pokemon: pokemon,
+        pokemon: selectedPokemon[pokemonIndex],
         position: { row, col },
         isSelected: false
       }
+      pokemonIndex++
     }
   }
-  
-  console.log(`보드 생성 완료: 남은 포켓몬 ${availablePokemon.length}개`);
   
   return board
 }
 
 // 초기 게임 상태 생성
-export function createInitialGameState(): GameState {
+export function createInitialGameState(mode: GameMode = 'normal'): GameState {
+  const config = GAME_MODE_CONFIGS[mode]
   return {
-    board: createGameBoard(),
+    board: createGameBoard(mode),
     score: 0,
-    timeLeft: GAME_CONFIG.timeLimit,
+    timeLeft: config.timeLimit,
     isPlaying: false,
     isGameOver: false,
-    selectedTiles: []
+    selectedTiles: [],
+    mode
   }
 }
 
 // 보드에서 특정 위치의 타일 가져오기
 export function getTileAt(board: GameTile[][], row: number, col: number): GameTile | null {
-  if (row < 0 || row >= GAME_CONFIG.rows || col < 0 || col >= GAME_CONFIG.cols) {
+  if (row < 0 || row >= board.length || col < 0 || col >= board[0].length) {
     return null
   }
   return board[row][col]
@@ -108,27 +98,7 @@ export function getTilesInArea(
   return tiles
 }
 
-// 보드 리셋 (새로운 포켓몬으로 교체)
-export function resetBoard(): GameTile[][] {
-  return createGameBoard()
-}
-
-// 빈 타일에 새 포켓몬 배치 (게임 진행 중 사용)
-export function fillEmptyTiles(board: GameTile[][]): GameTile[][] {
-  const newBoard = board.map(row => 
-    row.map(tile => {
-      if (tile.isEmpty) {
-        const newPokemon = getRandomPokemon()
-        return {
-          ...tile,
-          pokemon: newPokemon,
-          isEmpty: false,
-          isSelected: false
-        }
-      }
-      return tile
-    })
-  )
-  
-  return newBoard
+// 보드 리셋 (새로운 포켓몬으로 교체, 중복 없이)
+export function resetBoard(mode: GameMode = 'normal'): GameTile[][] {
+  return createGameBoard(mode)
 }
