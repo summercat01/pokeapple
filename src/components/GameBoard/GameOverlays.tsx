@@ -74,6 +74,16 @@ export default function GameOverlays({
               </span>
             </div>
 
+            {/* 개발자 정보 - 하단 중앙에 절대 위치 */}
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20">
+              <span 
+                className="text-sm font-semibold px-3 py-1 rounded"
+                style={{ color: '#00cc66' }}
+              >
+                Developed by 고재우
+              </span>
+            </div>
+
             <div className="text-center">
                 <h1 className="text-6xl font-bold mb-8">
                   <span style={{ color: '#ff6600' }}>포켓몬 </span>
