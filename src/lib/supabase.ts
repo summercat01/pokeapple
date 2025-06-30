@@ -250,7 +250,7 @@ export async function saveGameScore(score: number, mode: GameMode) {
     // 새로운 최고점수라면 업데이트
     const updateField = mode === 'normal' ? 'normal_best_score' : 'beginner_best_score'
     
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('users')
       .update({ [updateField]: score })
       .eq('id', user.id)

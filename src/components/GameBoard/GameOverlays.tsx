@@ -32,21 +32,6 @@ export default function GameOverlays({
 }: GameOverlaysProps) {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
   
-  const modeInfo = {
-    normal: {
-      title: '일반 모드',
-      description: '9x16 보드, 120초 제한시간',
-      icon: '🎯',
-      color: '#3b82f6'
-    },
-    beginner: {
-      title: '초보자 모드', 
-      description: '9x16 보드, 120초 제한시간 + 타입 힌트',
-      icon: '🌱',
-      color: '#10b981'
-    }
-  }
-
   const handleLoginClick = () => {
     setIsAuthModalOpen(true)
   }
