@@ -122,11 +122,11 @@ export async function signUp(username: string, nickname: string, password: strin
     console.log('Signup successful for user:', userData.id)
     return userData
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Complete signup error:', {
-      message: error.message,
-      name: error.name,
-      stack: error.stack
+      message: error instanceof Error ? error.message : 'Unknown error',
+      name: error instanceof Error ? error.name : 'Unknown',
+      stack: error instanceof Error ? error.stack : undefined
     })
     throw error
   }
@@ -172,11 +172,11 @@ export async function signIn(username: string, password: string) {
     
     console.log('Login successful for user:', userData.id)
     return userData
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Complete signin error:', {
-      message: error.message,
-      name: error.name,
-      stack: error.stack
+      message: error instanceof Error ? error.message : 'Unknown error',
+      name: error instanceof Error ? error.name : 'Unknown',
+      stack: error instanceof Error ? error.stack : undefined
     })
     throw error
   }

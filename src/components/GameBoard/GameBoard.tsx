@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { GameMode, GAME_MODE_CONFIGS, GameTile } from '@/types/game'
+import { Pokemon } from '@/types/pokemon'
 import TileGrid from './TileGrid'
 import GameOverlays from './GameOverlays'
 import { useGameState } from '@/hooks/useGameState'
@@ -172,7 +173,7 @@ export default function GameBoard({ initialMode = 'normal' }: GameBoardProps) {
                   return { 
                     ...tile, 
                     isEmpty: true, 
-                    pokemon: null as any,
+                    pokemon: null as unknown as Pokemon,
                     isRemoving: false,
                     bounceX: undefined,
                     bounceY: undefined

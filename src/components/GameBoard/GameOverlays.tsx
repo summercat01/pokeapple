@@ -4,7 +4,6 @@ import { GameMode } from '@/types/game'
 import UserStatus from '@/components/auth/UserStatus'
 import AuthModal from '@/components/auth/AuthModal'
 import RankingSidebar from './RankingSidebar'
-import { useAuth } from '@/contexts/AuthContext'
 
 interface GameOverlaysProps {
   gamePhase: GamePhase
@@ -47,8 +46,6 @@ export default function GameOverlays({
       color: '#10b981'
     }
   }
-
-  const currentModeInfo = modeInfo[selectedMode]
 
   const handleLoginClick = () => {
     setIsAuthModalOpen(true)

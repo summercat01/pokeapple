@@ -1,5 +1,4 @@
 import { GameTile } from '@/types/game'
-import { PokemonType } from '@/types/pokemon'
 
 /**
  * 보드에서 드래그 선택 가능한 매치가 있는지 확인

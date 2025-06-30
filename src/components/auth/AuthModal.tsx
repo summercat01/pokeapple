@@ -91,10 +91,11 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'login' }: Aut
       // Reset form and close modal on success
       setFormData({ username: '', password: '', nickname: '' })
       onClose()
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Auth error:', error)
+      const errorMessage = error instanceof Error ? error.message : `${activeTab === 'login' ? '로그인' : '회원가입'} 중 오류가 발생했습니다`
       setErrors({ 
-        general: error.message || `${activeTab === 'login' ? '로그인' : '회원가입'} 중 오류가 발생했습니다` 
+        general: errorMessage
       })
     }
   }

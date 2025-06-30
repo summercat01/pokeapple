@@ -47,12 +47,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // 로그인 상태로 설정
       setUser(userData)
       localStorage.setItem('pokeapple_user', JSON.stringify(userData))
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('AuthContext signup error:', error)
       console.error('Error details:', {
-        message: error.message,
-        name: error.name,
-        stack: error.stack
+        message: error instanceof Error ? error.message : 'Unknown error',
+        name: error instanceof Error ? error.name : 'Unknown',
+        stack: error instanceof Error ? error.stack : undefined
       })
       throw error
     } finally {

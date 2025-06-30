@@ -48,99 +48,23 @@ const TypeHintedTile = memo(({ tile, showTypeHints, isShuffling = false, dragInf
 
   // 애니메이션 스타일 계산
   const getAnimationStyle = () => {
-    if (tile.isRemoving && tile.bounceX !== undefined && tile.bounceY !== undefined) {
-      const animationName = `parabola-${tile.id}`
-      
-      const keyframes = `
-        @keyframes ${animationName} {
-          0% {
-            transform: translateX(0px) translateY(0px);
-            opacity: 1;
-          }
-          20% {
-            transform: translateX(${tile.bounceX * 0.3}px) translateY(${tile.bounceY * 0.8}px);
-            opacity: 1;
-          }
-          40% {
-            transform: translateX(${tile.bounceX * 0.7}px) translateY(${tile.bounceY}px);
-            opacity: 1;
-          }
-          60% {
-            transform: translateX(${tile.bounceX}px) translateY(${tile.bounceY * 0.6}px);
-            opacity: 1;
-          }
-          80% {
-            transform: translateX(${tile.bounceX * 1.1}px) translateY(80px);
-            opacity: 0.7;
-          }
-          100% {
-            transform: translateX(${tile.bounceX * 1.2}px) translateY(200px);
-            opacity: 0;
-          }
-        }
-      `
-      
-      if (!document.getElementById(`keyframes-${tile.id}`)) {
-        const style = document.createElement('style')
-        style.id = `keyframes-${tile.id}`
-        style.textContent = keyframes
-        document.head.appendChild(style)
-      }
-      
-              return {
-          animation: `${animationName} 0.8s ease-out forwards`,
-          zIndex: 10
-        }
-    }
-    
-    return {
-      transform: '',
-      transition: 'all 0.3s ease-out',
-      opacity: isShuffling ? 0.3 : 1,
-      zIndex: 1
-    }
-  }
-
-  // 타입 힌트 스타일 생성
-  const getTypeHintStyle = () => {
-    if (!showTypeHints) return {}
-
-    const types = tile.pokemon.types
-    
-    if (types.length === 1) {
-      // 단일 타입: 여러 방향 그림자로 테두리 효과
-      const color = POKEMON_TYPE_COLORS[types[0]]
+    if (tile.isRemoving) {
       return {
-        filter: `
-          drop-shadow(2px 0px 0px ${color})
-          drop-shadow(-2px 0px 0px ${color})
-          drop-shadow(0px 2px 0px ${color})
-          drop-shadow(0px -2px 0px ${color})
-          drop-shadow(2px 2px 0px ${color})
-          drop-shadow(-2px -2px 0px ${color})
-          drop-shadow(2px -2px 0px ${color})
-          drop-shadow(-2px 2px 0px ${color})
-        `
-      }
-    } else if (types.length === 2) {
-      // 복합 타입: 두 색상을 섞은 테두리
-      const color1 = POKEMON_TYPE_COLORS[types[0]]
-      const color2 = POKEMON_TYPE_COLORS[types[1]]
-      return {
-        filter: `
-          drop-shadow(2px 0px 0px ${color1})
-          drop-shadow(-2px 0px 0px ${color1})
-          drop-shadow(0px 2px 0px ${color2})
-          drop-shadow(0px -2px 0px ${color2})
-          drop-shadow(3px 3px 0px ${color2})
-          drop-shadow(-3px -3px 0px ${color2})
-          drop-shadow(3px -3px 0px ${color2})
-          drop-shadow(-3px 3px 0px ${color2})
-        `
+        transform: `translate(${tile.bounceX || 0}px, ${tile.bounceY || 0}px) scale(0.8)`,
+        opacity: 0.6,
+        transition: 'all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+        zIndex: 1
       }
     }
     
-    return {}
+    if (isShuffling) {
+      return {
+        transform: 'scale(0.9)',
+        opacity: 0.7,
+        transition: 'all 0.3s ease-in-out',
+        zIndex: 1
+      }
+    }
   }
 
   return (
@@ -184,7 +108,7 @@ const TypeHintedTile = memo(({ tile, showTypeHints, isShuffling = false, dragInf
               />
             ))
           ) : (
-            // 복합 타입: 좌우로 나누어서 테두리
+            // 복합 타입: 두 색상을 섞은 테두리
             [
               // 첫 번째 타입 (왼쪽 절반)
               ...[ 
