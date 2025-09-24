@@ -45,7 +45,7 @@ export default function AdminPage() {
     }
 
     loadUsers()
-  }, [user, isAdmin])
+  }, [user, isAdmin, fetchAdminUsers])
 
   const handleResetPassword = async (targetUserId: number) => {
     if (!user) return

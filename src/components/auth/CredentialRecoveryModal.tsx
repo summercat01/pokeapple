@@ -67,7 +67,7 @@ export default function CredentialRecoveryModal({ isOpen, onClose }: CredentialR
         body: JSON.stringify(payload)
       })
 
-      let data: any = null
+      let data: { error?: string; username?: string; password?: string } | null = null
       try {
         data = await response.json()
       } catch (parseError) {

@@ -72,7 +72,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: '사용자를 찾을 수 없습니다' }, { status: 404 })
     }
 
-    const { password_hash, ...publicUser } = data
+    const { password_hash: _unusedPasswordHash, ...publicUser } = data
+
+    void _unusedPasswordHash
 
     return NextResponse.json({ user: publicUser })
   } catch (error) {

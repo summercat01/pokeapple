@@ -20,14 +20,21 @@ const createServerSupabase = () => {
   })
 }
 
-const formatError = (message: string, status = 500) =>
-  NextResponse.json({ users: [], error: message }, { status })
-
-type RawUserRow = Record<string, any>
+type NormalisedUser = {
+  id: number
+  username: string
+  nickname: string
+  created_at: string
+  active_title: string | null
+  titles: string[]
+}
 
 type TitlesMap = Map<number, string[]>
 
-const normaliseUserRow = (user: RawUserRow, titlesMap: TitlesMap): RawUserRow | null => {
+const formatError = (message: string, status = 500) =>
+  NextResponse.json({ users: [], error: message }, { status })
+
+const normaliseUserRow = (user: Record<string, unknown>, titlesMap: TitlesMap): NormalisedUser | null => {
   const rawId = user.id
   const parsedId = typeof rawId === 'number' ? rawId : Number(rawId)
 
@@ -58,8 +65,8 @@ const normaliseUserRow = (user: RawUserRow, titlesMap: TitlesMap): RawUserRow | 
   }
 
   const relationTitles = Array.isArray(user.user_titles)
-    ? user.user_titles
-        .map((entry: { title?: string | null }) => entry?.title)
+    ? (user.user_titles as Array<{ title?: string | null }> | undefined)
+        ?.map((entry) => entry?.title)
         .filter((title): title is string => typeof title === 'string' && title.length > 0)
     : undefined
 
@@ -76,15 +83,17 @@ const normaliseUserRow = (user: RawUserRow, titlesMap: TitlesMap): RawUserRow | 
   }
 }
 
-const fetchUsersWithOrderFallback = async (supabase: ReturnType<typeof createClient>) => {
-  const orderColumns = ['created_at', 'id']
+const fetchUsersWithOrderFallback = async (
+  supabase: ReturnType<typeof createClient>
+): Promise<{ data: Record<string, unknown>[]; lastError: PostgrestError | null }> => {
+  const orderColumns: Array<'created_at' | 'id'> = ['created_at', 'id']
   let lastError: PostgrestError | null = null
 
   for (const column of orderColumns) {
     const { data, error } = await supabase
       .from('users')
       .select('*')
-      .order(column as any, { ascending: false })
+      .order(column, { ascending: false })
 
     if (!error) {
       return { data: data ?? [], lastError: null }
@@ -205,7 +214,7 @@ export async function GET(request: Request) {
 
     const formatted = (fallbackUsers ?? [])
       .map((user) => normaliseUserRow(user, titlesMap))
-      .filter((user): user is ReturnType<typeof normaliseUserRow> => user !== null)
+      .filter((user): user is NormalisedUser => user !== null)
 
     if (formatted.length === 0) {
       console.warn('Admin users fallback succeeded but returned no rows. Fetching admin user directly.')

@@ -66,14 +66,14 @@ export async function GET(request: NextRequest) {
 
     const scoreField = mode === 'normal' ? 'normal_best_score' : 'beginner_best_score'
     
-    let query = supabase
+    const query = supabase
       .from('users')
       .select('id, username, nickname, normal_best_score, beginner_best_score, active_title')
       .order(scoreField, { ascending: false })
       .gt(scoreField, 0)
       .limit(limit)
 
-    let { data, error } = await query
+    const { data, error } = await query
 
     if (error) {
       const missingColumn = typeof error.message === 'string' && error.message.includes('active_title')
@@ -84,6 +84,7 @@ export async function GET(request: NextRequest) {
           .order(scoreField, { ascending: false })
           .gt(scoreField, 0)
           .limit(limit)
+
         if (!fallback.error && fallback.data) {
           const rankings = fallback.data.map((user, index) => ({
             rank: index + 1,
@@ -99,11 +100,15 @@ export async function GET(request: NextRequest) {
           )
         }
 
-        error = fallback.error
+        if (fallback.error) {
+          console.error('Database query error (fallback):', fallback.error)
+          return NextResponse.json(
+            { error: 'Failed to fetch rankings' },
+            { status: 500, headers: corsHeaders }
+          )
+        }
       }
-    }
 
-    if (error) {
       console.error('Database query error:', error)
       return NextResponse.json(
         { error: 'Failed to fetch rankings' },

@@ -39,10 +39,6 @@ function hashPassword(password: string): string {
   return btoa(password + 'pokeapple_salt')
 }
 
-function verifyPassword(password: string, hash: string): boolean {
-  return hashPassword(password) === hash
-}
-
 // 간단한 인증 함수들
 export async function signUp(username: string, nickname: string, password: string) {
   try {

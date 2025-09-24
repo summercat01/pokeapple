@@ -58,11 +58,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: '존재하지 않는 사용자명입니다' }, { status: 404 })
     }
 
-    if (!verifyPassword(password, userData.password_hash)) {
+    const { password_hash: storedPasswordHash, ...publicUser } = userData
+
+    if (!verifyPassword(password, storedPasswordHash)) {
       return NextResponse.json({ error: '비밀번호가 일치하지 않습니다' }, { status: 401 })
     }
-
-    const { password_hash, ...publicUser } = userData
 
     return NextResponse.json({ user: publicUser })
   } catch (error) {
