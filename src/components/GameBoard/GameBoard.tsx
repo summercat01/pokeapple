@@ -1,13 +1,18 @@
 'use client'
 
-import { useState, useCallback } from 'react'
-import { GameMode, GAME_MODE_CONFIGS, GameTile } from '@/types/game'
+import { useState } from 'react'
+import { GameMode, GAME_MODE_CONFIGS } from '@/types/game'
 import { Pokemon } from '@/types/pokemon'
 import TileGrid from './TileGrid'
 import GameOverlays from './GameOverlays'
 import { useGameState } from '@/hooks/useGameState'
 import { useGameAudio } from '@/hooks/useGameAudio'
-import { useGameTimer } from '@/hooks/useGameTimer'
+import { 
+  GAME_LAYOUT, 
+  GAME_COLORS, 
+  ANIMATION
+} from '@/constants/gameConstants'
+import { getSelectedTilesInDragArea, validateTileTypeMatch } from '@/utils/dragUtils'
 
 interface GameBoardProps {
   initialMode?: GameMode
@@ -23,19 +28,7 @@ export default function GameBoard({ initialMode = 'normal' }: GameBoardProps) {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const [dragEnd, setDragEnd] = useState({ x: 0, y: 0 })
 
-  // 시간 종료 핸들러 메모화
-  const handleTimeUp = useCallback(async () => {
-    await gameState.endGame()
-    audio.stopBackgroundMusic()
-    audio.playGameOverSound()
-  }, [gameState.endGame, audio])
-
-  // 타이머 훅
-  useGameTimer({
-    gamePhase: gameState.gamePhase,
-    setTimeLeft: gameState.setTimeLeft,
-    onTimeUp: handleTimeUp
-  })
+  // 타이머 로직은 useGameState에서 처리됨
 
   // 게임 시작 핸들러
   const handleStartCountdown = () => {
@@ -68,8 +61,8 @@ export default function GameBoard({ initialMode = 'normal' }: GameBoardProps) {
   // === 드래그 처리 로직 (분리하지 않음) ===
   const handleMouseDown = (e: React.MouseEvent) => {
     const rect = e.currentTarget.getBoundingClientRect()
-    const x = e.clientX - rect.left - 60
-    const y = e.clientY - rect.top - 60
+    const x = e.clientX - rect.left - GAME_LAYOUT.BORDER_WIDTH
+    const y = e.clientY - rect.top - GAME_LAYOUT.BORDER_WIDTH
     
     setIsDragging(true)
     setDragStart({ x, y })
@@ -80,8 +73,8 @@ export default function GameBoard({ initialMode = 'normal' }: GameBoardProps) {
     if (!isDragging || !gameState.gameState) return
     
     const rect = e.currentTarget.getBoundingClientRect()
-    const x = e.clientX - rect.left - 60
-    const y = e.clientY - rect.top - 60
+    const x = e.clientX - rect.left - GAME_LAYOUT.BORDER_WIDTH
+    const y = e.clientY - rect.top - GAME_LAYOUT.BORDER_WIDTH
     
     // 드래그 박스만 업데이트 (게임 상태는 업데이트하지 않음)
     setDragEnd({ x, y })
@@ -98,42 +91,18 @@ export default function GameBoard({ initialMode = 'normal' }: GameBoardProps) {
     const minY = Math.min(dragStart.y, dragEnd.y)
     const maxY = Math.max(dragStart.y, dragEnd.y)
     
-    // 드래그 영역 내의 타일들 찾기 + 매칭 검사를 한 번의 순회로 처리
-    const selectedTiles: GameTile[] = []
-    const selectedTileIds = new Set<string>()
-    
-    gameState.gameState.board.forEach((row, rowIndex) => {
-      row.forEach((tile, colIndex) => {
-        if (tile.isEmpty) return
-        
-        // 타일의 실제 위치 계산
-        const tileSize = 60
-        const gap = 12
-        const paddingY = 64 // py-16
-        const paddingX = 80 // px-20
-        
-        const tileCenterX = colIndex * (tileSize + gap) + paddingX + (tileSize / 2)
-        const tileCenterY = rowIndex * (tileSize + gap) + paddingY + (tileSize / 2)
-        
-        const isSelected = tileCenterX >= minX && tileCenterX <= maxX &&
-                         tileCenterY >= minY && tileCenterY <= maxY
-        
-        if (isSelected) {
-          selectedTiles.push(tile)
-          selectedTileIds.add(tile.id)
-        }
-      })
-    })
+    // 드래그 영역 내의 타일들 찾기 (성능 최적화된 버전)
+    const { selectedTiles, selectedTileIds } = getSelectedTilesInDragArea(
+      gameState.gameState.board,
+      minX,
+      maxX,
+      minY,
+      maxY
+    )
     
     if (selectedTiles.length >= 2) {
-      // 같은 타입인지 확인 - 모든 타일이 공통된 하나의 타입을 가져야 함
-      const firstTileTypes = selectedTiles[0].pokemon.types
-      
-      const allSameType = firstTileTypes.some(type => {
-        return selectedTiles.every(tile => tile.pokemon.types.includes(type))
-      })
-      
-      if (allSameType) {
+      // 같은 타입인지 확인
+      if (validateTileTypeMatch(selectedTiles)) {
         // 성공! 점수 추가 및 타일 제거 (한 번의 순회로 처리)
         const points = selectedTiles.length
         
@@ -164,7 +133,7 @@ export default function GameBoard({ initialMode = 'normal' }: GameBoardProps) {
         
         audio.playSuccessSound()
         
-        // 0.8초 후 타일 실제 제거 (애니메이션 시간 단축)
+        // 애니메이션 후 타일 실제 제거
         setTimeout(() => {
           gameState.setGameState(prev => {
             if (!prev) return null
@@ -175,7 +144,7 @@ export default function GameBoard({ initialMode = 'normal' }: GameBoardProps) {
                   return { 
                     ...tile, 
                     isEmpty: true, 
-                    pokemon: null as unknown as Pokemon,
+                    pokemon: {} as Pokemon,
                     isRemoving: false,
                     bounceX: undefined,
                     bounceY: undefined
@@ -194,8 +163,8 @@ export default function GameBoard({ initialMode = 'normal' }: GameBoardProps) {
           // 셔플 체크
           setTimeout(async () => {
             await gameState.checkAndShuffle()
-          }, 100)
-        }, 800)
+          }, ANIMATION.STATE_UPDATE_DELAY)
+        }, ANIMATION.TILE_REMOVE_DURATION)
       } else {
         // 실패! 효과음만 재생 (상태 업데이트 불필요)
         audio.playFailSound()
@@ -217,15 +186,15 @@ export default function GameBoard({ initialMode = 'normal' }: GameBoardProps) {
         <div 
           className="relative grid gap-3 py-16 px-20 rounded-xl shadow-xl select-none"
           style={{
-            gridTemplateColumns: 'repeat(18, minmax(0, 1fr))',
-            backgroundColor: '#d5f6cd',
+            gridTemplateColumns: `repeat(${GAME_LAYOUT.BOARD_COLUMNS}, minmax(0, 1fr))`,
+            backgroundColor: GAME_COLORS.BACKGROUND_GREEN,
             width: 'fit-content',
             margin: '0 auto',
             maxWidth: '95vw',
             overflow: 'hidden',
-            borderWidth: '60px',
+            borderWidth: `${GAME_LAYOUT.BORDER_WIDTH}px`,
             borderStyle: 'solid',
-            borderColor: '#00cc66',
+            borderColor: GAME_COLORS.PRIMARY_GREEN,
             backgroundImage: 'linear-gradient(45deg, rgba(255,255,255,0.1) 25%, transparent 25%), linear-gradient(-45deg, rgba(255,255,255,0.1) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.1) 75%), linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.1) 75%)',
             backgroundSize: '20px 20px',
             backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px'

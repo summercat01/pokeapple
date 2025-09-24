@@ -238,58 +238,71 @@ export async function signOut(): Promise<void> {
   }
 }
 
-// 게임 점수 관련 함수들 (간소화)
+// 게임 점수 관련 함수들 (API 라우트 사용)
 export async function saveGameScore(score: number, mode: GameMode) {
   const user = await getCurrentUser()
   if (!user) throw new Error('로그인이 필요합니다')
 
-  // 현재 최고점수와 비교
-  const currentBest = mode === 'normal' ? user.normal_best_score : user.beginner_best_score
-  
-  if (score > currentBest) {
-    // 새로운 최고점수라면 업데이트
-    const updateField = mode === 'normal' ? 'normal_best_score' : 'beginner_best_score'
-    
-    const { error } = await supabase
-      .from('users')
-      .update({ [updateField]: score })
-      .eq('id', user.id)
-      .select()
-      .single()
+  try {
+    // API 라우트를 통해 점수 저장
+    const response = await fetch('/api/save-score', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId: user.id,
+        score,
+        mode,
+        gameData: {
+          timestamp: new Date().toISOString(),
+          userAgent: navigator.userAgent,
+        }
+      })
+    })
 
-    if (error) throw error
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || '점수 저장 실패')
+    }
+
+    const result = await response.json()
     
     // localStorage의 사용자 정보도 업데이트
-    const updatedUser = { ...user, [updateField]: score }
-    localStorage.setItem('pokeapple_user', JSON.stringify(updatedUser))
+    if (result.isNewRecord) {
+      const updateField = mode === 'normal' ? 'normal_best_score' : 'beginner_best_score'
+      const updatedUser = { ...user, [updateField]: score }
+      localStorage.setItem('pokeapple_user', JSON.stringify(updatedUser))
+    }
     
-    return { isNewRecord: true, score, previousBest: currentBest }
+    return result
+  } catch (error) {
+    console.error('Error saving score:', error)
+    throw error
   }
-  
-  return { isNewRecord: false, score, currentBest }
 }
 
 export async function getRankingsByMode(mode: GameMode, limit = 10) {
-  const scoreField = mode === 'normal' ? 'normal_best_score' : 'beginner_best_score'
-  
-  const { data, error } = await supabase
-    .from('users')
-    .select('id, username, nickname, normal_best_score, beginner_best_score')
-    .order(scoreField, { ascending: false })
-    .gt(scoreField, 0) // 0점보다 큰 점수만
-    .limit(limit)
+  try {
+    const response = await fetch(`/api/rankings?mode=${mode}&limit=${limit}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    })
 
-  if (error) {
+    if (!response.ok) {
+      const errorData = await response.json()
+      console.error('Error fetching rankings:', errorData.error)
+      return []
+    }
+
+    const data = await response.json()
+    return data.rankings || []
+  } catch (error) {
     console.error('Error fetching rankings:', error)
     return []
   }
-  
-  return data.map((user, index) => ({
-    rank: index + 1,
-    nickname: user.nickname,
-    username: user.username,
-    score: mode === 'normal' ? user.normal_best_score : user.beginner_best_score
-  }))
 }
 
 export async function getUserBestScore(mode: GameMode) {
@@ -315,41 +328,24 @@ export async function getUserRanking(mode: GameMode) {
   const user = await getCurrentUser()
   if (!user) return null
 
-  const scoreField = mode === 'normal' ? 'normal_best_score' : 'beginner_best_score'
-  const userScore = mode === 'normal' ? user.normal_best_score : user.beginner_best_score
-  
-  // 사용자 점수가 0이면 랭킹 없음
-  if (userScore === 0) {
+  try {
+    const response = await fetch(`/api/user-ranking?userId=${user.id}&mode=${mode}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      console.error('Error fetching user ranking:', errorData.error)
+      return null
+    }
+
+    const data = await response.json()
+    return data.ranking
+  } catch (error) {
+    console.error('Error fetching user ranking:', error)
     return null
-  }
-
-  // 내 점수보다 높은 점수를 가진 사용자 수를 계산하여 랭킹 구하기
-  const { count: higherScoreCount, error: rankError } = await supabase
-    .from('users')
-    .select('*', { count: 'exact', head: true })
-    .gt(scoreField, userScore)
-
-  if (rankError) {
-    console.error('Error calculating user rank:', rankError)
-    return null
-  }
-
-  // 전체 플레이어 수 (0점보다 큰 점수를 가진 사용자)
-  const { count: totalPlayers, error: totalError } = await supabase
-    .from('users')
-    .select('*', { count: 'exact', head: true })
-    .gt(scoreField, 0)
-
-  if (totalError) {
-    console.error('Error counting total players:', totalError)
-    return null
-  }
-
-  const rank = (higherScoreCount || 0) + 1
-
-  return {
-    rank,
-    score: userScore,
-    totalPlayers: totalPlayers || 0
   }
 }

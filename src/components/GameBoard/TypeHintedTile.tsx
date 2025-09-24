@@ -1,6 +1,8 @@
 import React, { memo } from 'react'
+import Image from 'next/image'
 import { GameTile } from '@/types/game'
 import { POKEMON_TYPE_COLORS } from '@/types/pokemon'
+import { calculateTileCenterPosition } from '@/constants/gameConstants'
 
 interface DragInfo {
   minX: number
@@ -33,14 +35,7 @@ const TypeHintedTile = memo(({ tile, showTypeHints, isShuffling = false, dragInf
   const isDragSelected = () => {
     if (!dragInfo || tile.isEmpty) return false
     
-    // 타일의 실제 위치 계산 (GameBoard와 동일한 로직)
-    const tileSize = 60
-    const gap = 12
-    const paddingY = 64 // py-16
-    const paddingX = 80 // px-20
-    
-    const tileCenterX = colIndex * (tileSize + gap) + paddingX + (tileSize / 2)
-    const tileCenterY = rowIndex * (tileSize + gap) + paddingY + (tileSize / 2)
+    const { tileCenterX, tileCenterY } = calculateTileCenterPosition(rowIndex, colIndex)
     
     return tileCenterX >= dragInfo.minX && tileCenterX <= dragInfo.maxX &&
            tileCenterY >= dragInfo.minY && tileCenterY <= dragInfo.maxY
@@ -105,30 +100,40 @@ const TypeHintedTile = memo(({ tile, showTypeHints, isShuffling = false, dragInf
             { x: -2, y: 0 },
             { x: 2, y: 0 }
           ].map((offset, index) => (
-            <img 
+            <Image 
               key={index}
               src={tile.pokemon.sprite || 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png'} 
               alt={`${tile.pokemon.name} silhouette`}
-              className="w-16 h-16 object-contain pixel-art absolute pokemon-silhouette"
+              width={64}
+              height={64}
+              className="object-contain pixel-art absolute pokemon-silhouette"
               style={{
                 transform: `translate(${offset.x}px, ${offset.y}px)`,
-                zIndex: 1
+                zIndex: 1,
+                width: '4rem',
+                height: '4rem'
               }}
               draggable={false}
+              unoptimized
             />
           ))}
         </>
       )}
       
       {/* 메인 포켓몬 이미지 */}
-      <img 
+      <Image 
         src={tile.pokemon.sprite || 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png'} 
         alt={tile.pokemon.name}
-        className="w-15 h-15 object-contain pixel-art relative"
+        width={60}
+        height={60}
+        className="object-contain pixel-art relative"
         style={{ 
-          zIndex: 2
+          zIndex: 2,
+          width: '3.75rem',
+          height: '3.75rem'
         }}
         draggable={false}
+        unoptimized
       />
       
       {/* 타입 힌트 툴팁 (호버 시) */}

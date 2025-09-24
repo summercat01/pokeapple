@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import Image from 'next/image'
 import { GamePhase } from '@/hooks/useGameState'
 import { GameMode } from '@/types/game'
 import UserStatus from '@/components/auth/UserStatus'
@@ -41,6 +42,14 @@ export default function GameOverlays({
     setIsAuthModalOpen(false)
   }
 
+  // AuthModal 렌더링 함수 (중복 제거)
+  const renderAuthModal = () => (
+    <AuthModal 
+      isOpen={isAuthModalOpen}
+      onClose={handleAuthModalClose}
+    />
+  )
+
   // 메인 화면 오버레이
   if (gamePhase === 'main') {
     return (
@@ -75,13 +84,28 @@ export default function GameOverlays({
             </div>
 
             {/* 개발자 정보 - 하단 중앙에 절대 위치 */}
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20">
-              <span 
-                className="text-sm font-semibold px-3 py-1 rounded"
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20 text-center">
+              {/* QR 코드 */}
+              <div className="mb-2">
+                <Image 
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent('https://invite.kakao.com/tc/62Ss7gpVRc')}`}
+                  alt="카카오톡방 QR 코드"
+                  width={80}
+                  height={80}
+                  className="mx-auto bg-white p-1 rounded shadow-sm hover:scale-110 transition-transform duration-200"
+                  unoptimized
+                />
+              </div>
+              {/* 개발자 정보 */}
+              <a 
+                href="https://invite.kakao.com/tc/62Ss7gpVRc" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-semibold px-3 py-1 rounded underline hover:underline-offset-4 transition-all duration-200 hover:scale-105"
                 style={{ color: '#00cc66' }}
               >
                 Developed by 고재우
-              </span>
+              </a>
             </div>
 
             <div className="text-center">
@@ -154,10 +178,7 @@ export default function GameOverlays({
         </div>
 
         {/* AuthModal */}
-        <AuthModal 
-          isOpen={isAuthModalOpen}
-          onClose={handleAuthModalClose}
-        />
+        {renderAuthModal()}
       </>
     )
   }
@@ -182,10 +203,7 @@ export default function GameOverlays({
         </div>
 
         {/* AuthModal */}
-        <AuthModal 
-          isOpen={isAuthModalOpen}
-          onClose={handleAuthModalClose}
-        />
+        {renderAuthModal()}
       </>
     )
   }
@@ -211,10 +229,7 @@ export default function GameOverlays({
         </div>
 
         {/* AuthModal */}
-        <AuthModal 
-          isOpen={isAuthModalOpen}
-          onClose={handleAuthModalClose}
-        />
+        {renderAuthModal()}
       </>
     )
   }
@@ -267,18 +282,10 @@ export default function GameOverlays({
         </div>
 
         {/* AuthModal */}
-        <AuthModal 
-          isOpen={isAuthModalOpen}
-          onClose={handleAuthModalClose}
-        />
+        {renderAuthModal()}
       </>
     )
   }
 
-  return (
-    <AuthModal 
-      isOpen={isAuthModalOpen}
-      onClose={handleAuthModalClose}
-    />
-  )
+  return renderAuthModal()
 } 

@@ -112,11 +112,12 @@ function checkRectangleMatch(
 }
 
 /**
- * 기존 포켓몬들의 위치만 섞어서 재배치
+ * 기존 포켓몬들의 위치만 섞어서 재배치 (시드 기반)
  * @param board 현재 게임 보드
+ * @param seed 셔플을 위한 시드 (선택사항)
  * @returns 셔플된 새 보드
  */
-export function shuffleExistingTiles(board: GameTile[][]): GameTile[][] {
+export function shuffleExistingTiles(board: GameTile[][], seed?: number): GameTile[][] {
   // 모든 비어있지 않은 타일들을 수집
   const nonEmptyTiles: GameTile[] = []
   const emptyPositions: { row: number; col: number }[] = []
@@ -132,12 +133,9 @@ export function shuffleExistingTiles(board: GameTile[][]): GameTile[][] {
     }
   }
   
-  // 포켓몬들만 셔플 (Fisher-Yates 알고리즘)
-  const shuffledPokemon = nonEmptyTiles.map(tile => tile.pokemon!)
-  for (let i = shuffledPokemon.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[shuffledPokemon[i], shuffledPokemon[j]] = [shuffledPokemon[j], shuffledPokemon[i]]
-  }
+  // 시드 기반 셔플
+  const finalSeed = seed ?? (typeof window !== 'undefined' ? Date.now() : 12345)
+  const shuffledPokemon = seededShuffleArray(nonEmptyTiles.map(tile => tile.pokemon!), finalSeed)
   
   // 새 보드 생성
   const newBoard: GameTile[][] = board.map(row => 
@@ -163,6 +161,26 @@ export function shuffleExistingTiles(board: GameTile[][]): GameTile[][] {
 }
 
 /**
+ * 시드 기반 셔플 함수
+ */
+function seededShuffleArray<T>(array: T[], seed: number): T[] {
+  const shuffled = [...array]
+  let currentSeed = seed
+  
+  // 간단한 선형 합동 생성기 (Linear Congruential Generator)
+  const lcg = () => {
+    currentSeed = (currentSeed * 1664525 + 1013904223) % Math.pow(2, 32)
+    return currentSeed / Math.pow(2, 32)
+  }
+  
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(lcg() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  }
+  return shuffled
+}
+
+/**
  * 보드에 남은 포켓몬이 있는지 확인
  * @param board 게임 보드
  * @returns 남은 포켓몬이 있으면 true
@@ -181,9 +199,10 @@ export function hasRemainingPokemon(board: GameTile[][]): boolean {
 /**
  * 게임이 완전히 끝났는지 확인 (더 이상 매치도 셔플도 불가능)
  * @param board 게임 보드
+ * @param seed 셔플을 위한 시드 (선택사항)
  * @returns 게임이 완전히 끝났으면 true
  */
-export function isGameCompletelyFinished(board: GameTile[][]): boolean {
+export function isGameCompletelyFinished(board: GameTile[][], seed?: number): boolean {
   // 남은 포켓몬이 없으면 게임 완료
   if (!hasRemainingPokemon(board)) {
     return true
@@ -195,6 +214,6 @@ export function isGameCompletelyFinished(board: GameTile[][]): boolean {
   }
   
   // 매치가 불가능하면 셔플해서 확인
-  const shuffledBoard = shuffleExistingTiles(board)
+  const shuffledBoard = shuffleExistingTiles(board, seed)
   return !hasValidMatches(shuffledBoard)
 } 
