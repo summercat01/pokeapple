@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient, PostgrestError } from '@supabase/supabase-js'
+import { createClient, PostgrestError, SupabaseClient } from '@supabase/supabase-js'
 
 export const runtime = 'nodejs'
 
@@ -84,7 +84,7 @@ const normaliseUserRow = (user: Record<string, unknown>, titlesMap: TitlesMap): 
 }
 
 const fetchUsersWithOrderFallback = async (
-  supabase: ReturnType<typeof createClient>
+  supabase: SupabaseClient
 ): Promise<{ data: Record<string, unknown>[]; lastError: PostgrestError | null }> => {
   const orderColumns: Array<'created_at' | 'id'> = ['created_at', 'id']
   let lastError: PostgrestError | null = null
@@ -110,7 +110,7 @@ const fetchUsersWithOrderFallback = async (
   return { data: [], lastError }
 }
 
-const fetchTitlesMap = async (supabase: ReturnType<typeof createClient>) => {
+const fetchTitlesMap = async (supabase: SupabaseClient) => {
   const titlesMap: TitlesMap = new Map()
 
   try {
