@@ -58,7 +58,8 @@ export default function CredentialRecoveryModal({ isOpen, onClose }: CredentialR
       const endpoint = activeTab === 'username' ? '/api/recover-username' : '/api/recover-password'
       const payload: Record<string, string> = { nickname: nickname.trim() }
       if (activeTab === 'password') {
-        payload.username = username.trim()
+        setResult('오픈채팅방 등을 활용하여 GM에게 문의해주세요.')
+        return
       }
 
       const response = await fetch(endpoint, {
