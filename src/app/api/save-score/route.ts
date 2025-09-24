@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { GameMode } from '@/types/game'
 
 // 서버 사이드 Supabase 클라이언트 (서비스 키 사용)
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -46,7 +45,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { userId, score, mode, gameData } = body
+    const { userId, score, mode } = body
 
     // 입력 검증
     if (!userId || typeof score !== 'number' || !mode) {

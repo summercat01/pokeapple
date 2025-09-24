@@ -24,7 +24,7 @@ export function validateGameMode(mode: string): mode is 'normal' | 'beginner' {
 /**
  * 사용자 ID 유효성 검증
  */
-export function validateUserId(userId: any): boolean {
+export function validateUserId(userId: unknown): boolean {
   return (
     typeof userId === 'number' &&
     Number.isInteger(userId) &&
@@ -35,14 +35,16 @@ export function validateUserId(userId: any): boolean {
 /**
  * 게임 데이터 유효성 검증
  */
-export function validateGameData(gameData: any): boolean {
+export function validateGameData(gameData: unknown): boolean {
   if (!gameData || typeof gameData !== 'object') {
     return false
   }
 
+  const data = gameData as Record<string, unknown>
+
   // 타임스탬프 검증 (최근 1시간 이내)
-  if (gameData.timestamp) {
-    const gameTime = new Date(gameData.timestamp).getTime()
+  if (data.timestamp && typeof data.timestamp === 'string') {
+    const gameTime = new Date(data.timestamp).getTime()
     const now = Date.now()
     const oneHour = 60 * 60 * 1000
     
@@ -85,8 +87,8 @@ export const rateLimiter = new RateLimiter()
 export function validateScoreSubmission(
   score: number, 
   mode: string, 
-  userId: any, 
-  gameData: any
+  userId: unknown, 
+  gameData: unknown
 ): { valid: boolean; error?: string } {
   // 점수 검증
   if (!validateScore(score)) {
