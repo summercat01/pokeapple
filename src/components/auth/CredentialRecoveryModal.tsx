@@ -116,7 +116,7 @@ export default function CredentialRecoveryModal({ isOpen, onClose }: CredentialR
             onClick={() => handleTabChange('password')}
             className={`flex-1 py-2 px-4 text-center border-b-2 transition-colors ${
               activeTab === 'password'
-                ? 'border-blue-500 text-blue-600 font-semibold'
+                ? 'border-red-500 text-red-600 font-semibold'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
@@ -137,15 +137,9 @@ export default function CredentialRecoveryModal({ isOpen, onClose }: CredentialR
           </div>
 
           {activeTab === 'password' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">아이디</label>
-              <input
-                type="text"
-                value={username}
-                onChange={(event) => setUsername(event.target.value)}
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 border-gray-300"
-                placeholder="아이디를 입력하세요"
-              />
+            <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 text-sm rounded-md p-3">
+              <p>비밀번호 찾기는 GM에게 직접 문의해 주세요.</p>
+              <p className="mt-1">오픈채팅방 등을 활용하여 요청해 주시면 안내해 드립니다.</p>
             </div>
           )}
 
@@ -161,15 +155,25 @@ export default function CredentialRecoveryModal({ isOpen, onClose }: CredentialR
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className={`w-full py-2 px-4 rounded-md font-semibold text-white transition-colors ${
-              loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
-            }`}
-          >
-            {loading ? '조회 중...' : activeTab === 'username' ? '아이디 찾기' : '비밀번호 찾기'}
-          </button>
+          {activeTab === 'username' ? (
+            <button
+              type="submit"
+              disabled={loading}
+              className={`w-full py-2 px-4 rounded-md font-semibold text-white transition-colors ${
+                loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+              }`}
+            >
+              {loading ? '조회 중...' : '아이디 찾기'}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setResult('오픈채팅방 등을 활용하여 GM에게 문의해주세요.')}
+              className="w-full py-2 px-4 rounded-md font-semibold text-white transition-colors bg-red-600 hover:bg-red-700"
+            >
+              GM에게 문의하기
+            </button>
+          )}
         </form>
       </div>
     </div>
