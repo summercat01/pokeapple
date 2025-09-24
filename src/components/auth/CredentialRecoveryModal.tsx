@@ -125,54 +125,46 @@ export default function CredentialRecoveryModal({ isOpen, onClose }: CredentialR
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">닉네임</label>
-            <input
-              type="text"
-              value={nickname}
-              onChange={(event) => setNickname(event.target.value)}
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 border-gray-300"
-              placeholder="닉네임을 입력하세요"
-            />
-          </div>
-
-          {activeTab === 'password' && (
-            <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 text-sm rounded-md p-3">
-              <p>비밀번호 찾기는 GM에게 직접 문의해 주세요.</p>
-              <p className="mt-1">오픈채팅방 등을 활용하여 요청해 주시면 안내해 드립니다.</p>
-            </div>
-          )}
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-md p-3">
-              {error}
-            </div>
-          )}
-
-          {result && (
-            <div className="bg-blue-50 border border-blue-200 text-blue-600 text-sm rounded-md p-3 whitespace-pre-wrap">
-              {result}
-            </div>
-          )}
-
           {activeTab === 'username' ? (
-            <button
-              type="submit"
-              disabled={loading}
-              className={`w-full py-2 px-4 rounded-md font-semibold text-white transition-colors ${
-                loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
-              }`}
-            >
-              {loading ? '조회 중...' : '아이디 찾기'}
-            </button>
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">닉네임</label>
+                <input
+                  type="text"
+                  value={nickname}
+                  onChange={(event) => setNickname(event.target.value)}
+                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 border-gray-300"
+                  placeholder="닉네임을 입력하세요"
+                />
+              </div>
+
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-md p-3">
+                  {error}
+                </div>
+              )}
+
+              {result && (
+                <div className="bg-blue-50 border border-blue-200 text-blue-600 text-sm rounded-md p-3 whitespace-pre-wrap">
+                  {result}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className={`w-full py-2 px-4 rounded-md font-semibold text-white transition-colors ${
+                  loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+                }`}
+              >
+                {loading ? '조회 중...' : '아이디 찾기'}
+              </button>
+            </>
           ) : (
-            <button
-              type="button"
-              onClick={() => setResult('오픈채팅방 등을 활용하여 GM에게 문의해주세요.')}
-              className="w-full py-2 px-4 rounded-md font-semibold text-white transition-colors bg-red-600 hover:bg-red-700"
-            >
-              GM에게 문의하기
-            </button>
+            <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 text-sm rounded-md p-3 space-y-1">
+              <p>비밀번호 찾기는 GM에게 직접 문의해 주세요.</p>
+              <p>오픈채팅방 등을 활용하여 요청해 주시면 안내해 드립니다.</p>
+            </div>
           )}
         </form>
       </div>
