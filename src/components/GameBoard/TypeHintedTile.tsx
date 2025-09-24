@@ -60,6 +60,13 @@ const TypeHintedTile = memo(({ tile, showTypeHints, isShuffling = false, dragInf
         zIndex: 1
       }
     }
+
+  if (tile.isHinted) {
+    return {
+      transition: 'all 0.25s ease-in-out',
+      zIndex: 2
+    }
+  }
   }
 
   return (
@@ -67,7 +74,7 @@ const TypeHintedTile = memo(({ tile, showTypeHints, isShuffling = false, dragInf
       data-tile-id={tile.id}
       className={`
         w-15 h-15 rounded-lg flex items-center justify-center transition-all duration-200 overflow-visible relative
-        ${tile.isSelected || isDragSelected() ? 'scale-105' : ''}
+        ${(tile.isSelected || isDragSelected()) ? 'scale-105' : ''}
       `}
       style={{
         ...getAnimationStyle()
@@ -119,7 +126,8 @@ const TypeHintedTile = memo(({ tile, showTypeHints, isShuffling = false, dragInf
           ))}
         </>
       )}
-      
+
+      {/* 힌트용 테두리 실루엣 (선택 상태가 아닐 때만) */}
       {/* 메인 포켓몬 이미지 */}
       <Image 
         src={tile.pokemon.sprite || 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png'} 
@@ -130,7 +138,10 @@ const TypeHintedTile = memo(({ tile, showTypeHints, isShuffling = false, dragInf
         style={{ 
           zIndex: 2,
           width: '3.75rem',
-          height: '3.75rem'
+          height: '3.75rem',
+          filter: tile.isHinted && !tile.isSelected && !isDragSelected()
+            ? 'drop-shadow(0 0 10px rgba(125, 211, 252, 0.95)) drop-shadow(0 0 22px rgba(14, 165, 233, 0.85)) drop-shadow(0 0 32px rgba(14, 165, 233, 0.65))'
+            : undefined
         }}
         draggable={false}
         unoptimized

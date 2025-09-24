@@ -12,6 +12,7 @@ interface ExtendedRankingEntry {
   rank: number
   username: string
   nickname: string
+  active_title?: string | null
   score: number
   isEmpty?: boolean
 }
@@ -122,6 +123,11 @@ export default function RankingSidebar({ selectedMode, onModeChange }: RankingSi
                         ) : (
                           <p className="text-xs font-semibold text-gray-800 truncate">
                             {entry.nickname}
+                            {entry.active_title && (
+                              <span className="ml-1 text-[10px] font-medium text-indigo-700 bg-indigo-100/80 px-1.5 py-0.5 rounded-full border border-indigo-200 align-middle">
+                                {entry.active_title}
+                              </span>
+                            )}
                           </p>
                         )}
                       </div>
@@ -157,6 +163,11 @@ export default function RankingSidebar({ selectedMode, onModeChange }: RankingSi
                           <p className="text-xs font-medium" style={{ color: '#00cc66' }}>
                             전체 {myRanking.totalPlayers}명 중
                           </p>
+                          {myRanking.active_title && (
+                            <p className="text-[10px] font-medium text-indigo-700 bg-indigo-100/80 px-2 py-0.5 rounded-full inline-block mt-1 border border-indigo-200">
+                              {myRanking.active_title}
+                            </p>
+                          )}
                         </div>
                       </div>
                       <div className="text-xs font-bold bg-orange-100 px-2 py-1 rounded-full" style={{ color: '#ff6600' }}>

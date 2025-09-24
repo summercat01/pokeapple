@@ -66,12 +66,42 @@ export async function GET(request: NextRequest) {
 
     const scoreField = mode === 'normal' ? 'normal_best_score' : 'beginner_best_score'
     
-    const { data, error } = await supabase
+    let query = supabase
       .from('users')
-      .select('id, username, nickname, normal_best_score, beginner_best_score')
+      .select('id, username, nickname, normal_best_score, beginner_best_score, active_title')
       .order(scoreField, { ascending: false })
-      .gt(scoreField, 0) // 0점보다 큰 점수만
+      .gt(scoreField, 0)
       .limit(limit)
+
+    let { data, error } = await query
+
+    if (error) {
+      const missingColumn = typeof error.message === 'string' && error.message.includes('active_title')
+      if (missingColumn) {
+        const fallback = await supabase
+          .from('users')
+          .select('id, username, nickname, normal_best_score, beginner_best_score')
+          .order(scoreField, { ascending: false })
+          .gt(scoreField, 0)
+          .limit(limit)
+        if (!fallback.error && fallback.data) {
+          const rankings = fallback.data.map((user, index) => ({
+            rank: index + 1,
+            nickname: user.nickname,
+            username: user.username,
+            active_title: null,
+            score: mode === 'normal' ? user.normal_best_score : user.beginner_best_score
+          }))
+
+          return NextResponse.json(
+            { rankings },
+            { status: 200, headers: corsHeaders }
+          )
+        }
+
+        error = fallback.error
+      }
+    }
 
     if (error) {
       console.error('Database query error:', error)
@@ -80,13 +110,14 @@ export async function GET(request: NextRequest) {
         { status: 500, headers: corsHeaders }
       )
     }
-    
-    const rankings = data.map((user, index) => ({
+
+    const rankings = data?.map((user, index) => ({
       rank: index + 1,
       nickname: user.nickname,
       username: user.username,
+      active_title: 'active_title' in user ? user.active_title : null,
       score: mode === 'normal' ? user.normal_best_score : user.beginner_best_score
-    }))
+    })) ?? []
 
     return NextResponse.json(
       { rankings },

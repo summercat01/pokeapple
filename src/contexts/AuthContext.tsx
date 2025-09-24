@@ -1,7 +1,20 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import { User, signUp, signIn, getCurrentUser, signOut } from '@/lib/supabase'
+import {
+  User,
+  signUp,
+  signIn,
+  getCurrentUser,
+  signOut,
+  updateNickname,
+  fetchAllUsers,
+  resetUserPassword,
+  fetchUserTitles,
+  setActiveTitle,
+  grantTitle,
+  type AdminUserSummary
+} from '@/lib/supabase'
 
 interface AuthContextType {
   user: User | null
@@ -9,7 +22,14 @@ interface AuthContextType {
   signUp: (username: string, nickname: string, password: string) => Promise<void>
   signIn: (username: string, password: string) => Promise<void>
   signOut: () => Promise<void>
+  updateNickname: (nickname: string) => Promise<void>
+  fetchAdminUsers: () => Promise<AdminUserSummary[]>
+  resetPassword: (userId: number, newPassword: string) => Promise<void>
+  fetchTitles: () => Promise<string[]>
+  updateActiveTitle: (title: string | null) => Promise<void>
+  grantTitleToUser: (userId: number, title: string) => Promise<void>
   isAuthenticated: boolean
+  isAdmin: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -19,6 +39,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true)
 
   const isAuthenticated = !!user
+  const isAdmin = user?.username === 'jumok'
 
   useEffect(() => {
     // 초기 사용자 상태 확인
@@ -91,13 +112,59 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
+  const handleUpdateNickname = async (nickname: string) => {
+    if (!user) {
+      throw new Error('로그인이 필요합니다')
+    }
+
+    const updatedUser = await updateNickname(user.id, nickname)
+    setUser(updatedUser)
+  }
+
+  const handleFetchAdminUsers = async () => {
+    if (!user || !isAdmin) {
+      throw new Error('관리자 권한이 필요합니다')
+    }
+    return fetchAllUsers(user.id, user.username)
+  }
+
+  const handleResetPassword = async (targetUserId: number, newPassword: string) => {
+    if (!user || !isAdmin) {
+      throw new Error('관리자 권한이 필요합니다')
+    }
+    await resetUserPassword(user.id, targetUserId, newPassword)
+  }
+
+  const handleFetchTitles = async () => {
+    if (!user) throw new Error('로그인이 필요합니다')
+    return fetchUserTitles(user.id)
+  }
+
+  const handleUpdateActiveTitle = async (title: string | null) => {
+    if (!user) throw new Error('로그인이 필요합니다')
+    const updatedUser = await setActiveTitle(user.id, title)
+    setUser(updatedUser)
+  }
+
+  const handleGrantTitle = async (targetUserId: number, title: string) => {
+    if (!user || !isAdmin) throw new Error('관리자 권한이 필요합니다')
+    await grantTitle(user.id, targetUserId, title)
+  }
+
   const value: AuthContextType = {
     user,
     loading,
     signUp: handleSignUp,
     signIn: handleSignIn,
     signOut: handleSignOut,
-    isAuthenticated
+    updateNickname: handleUpdateNickname,
+    fetchAdminUsers: handleFetchAdminUsers,
+    resetPassword: handleResetPassword,
+    fetchTitles: handleFetchTitles,
+    updateActiveTitle: handleUpdateActiveTitle,
+    grantTitleToUser: handleGrantTitle,
+    isAuthenticated,
+    isAdmin
   }
 
   return (

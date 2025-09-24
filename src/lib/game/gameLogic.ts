@@ -51,7 +51,8 @@ export function createGameBoard(mode: GameMode = 'normal', seed?: number): GameT
         id: `${row}-${col}`,
         pokemon: selectedPokemon[pokemonIndex],
         position: { row, col },
-        isSelected: false
+        isSelected: false,
+        isHinted: false
       }
       pokemonIndex++
     }

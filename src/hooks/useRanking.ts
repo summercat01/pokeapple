@@ -7,6 +7,7 @@ interface RankingEntry {
   rank: number
   username: string
   nickname: string
+  active_title?: string | null
   score: number
 }
 
@@ -14,6 +15,7 @@ interface MyRanking {
   rank: number
   score: number
   totalPlayers: number
+  active_title?: string | null
 }
 
 interface UseRankingReturn {

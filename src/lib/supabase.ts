@@ -11,10 +11,26 @@ export interface User {
   id: number // Back to integer ID for custom auth
   username: string
   nickname: string
+  title?: string | null
+  active_title?: string | null
   password_hash: string
   normal_best_score: number
   beginner_best_score: number
   created_at: string
+}
+
+export interface UserTitle {
+  id: number
+  user_id: number
+  title: string
+}
+
+interface RankingEntryWithTitle {
+  rank: number
+  username: string
+  nickname: string
+  active_title?: string | null
+  score: number
 }
 
 // 간단한 비밀번호 해시 함수 (실제 프로덕션에서는 bcrypt 사용 권장)
@@ -133,60 +149,229 @@ export async function signUp(username: string, nickname: string, password: strin
 }
 
 export async function signIn(username: string, password: string) {
+  if (!username || !password) {
+    throw new Error('아이디와 비밀번호를 입력해주세요')
+  }
+
+  const response = await fetch('/api/auth/login', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ username, password })
+  })
+
+  let data: { user?: User; error?: string } | null = null
+
   try {
-    console.log('SignIn attempt:', { username, passwordLength: password.length })
-    
-    // 1. Validate input
-    if (!username || !password) {
-      throw new Error('아이디와 비밀번호를 입력해주세요')
-    }
-    
-    // 2. Find user by username
-    console.log('Looking for user:', username)
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('username', username)
-      .single()
-    
-    console.log('User lookup result:', { userData: userData ? 'Found' : 'Not found', userError })
-    
-    if (userError) {
-      console.error('User lookup error:', userError)
-      if (userError.code === 'PGRST116') {
-        throw new Error('존재하지 않는 사용자명입니다')
-      }
-      throw new Error(`로그인 오류: ${userError.message}`)
-    }
-    
-    if (!userData) {
-      throw new Error('사용자를 찾을 수 없습니다')
-    }
-    
-    // 3. Verify password
-    console.log('Verifying password for user:', userData.id)
-    if (!verifyPassword(password, userData.password_hash)) {
-      console.log('Password verification failed')
-      throw new Error('비밀번호가 일치하지 않습니다')
-    }
-    
-    console.log('Login successful for user:', userData.id)
-    return userData
-  } catch (error: unknown) {
-    console.error('Complete signin error:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      name: error instanceof Error ? error.name : 'Unknown',
-      stack: error instanceof Error ? error.stack : undefined
-    })
+    data = await response.json()
+  } catch (error) {
+    console.error('Failed to parse login response:', error)
+  }
+
+  if (!response.ok || !data?.user) {
+    const message = data?.error ?? '로그인 중 오류가 발생했습니다'
+    throw new Error(message)
+  }
+
+  return data.user
+}
+
+export async function updateNickname(userId: number, nickname: string) {
+  const response = await fetch('/api/auth/update-nickname', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ userId, nickname })
+  })
+
+  let data: { user?: User; error?: string } | null = null
+
+  try {
+    data = await response.json()
+  } catch (error) {
+    console.error('Failed to parse update nickname response:', error)
+  }
+
+  if (!response.ok || !data?.user) {
+    const message = data?.error ?? '닉네임 변경 중 오류가 발생했습니다'
+    throw new Error(message)
+  }
+
+  // 로컬 데이터 업데이트
+  localStorage.setItem('pokeapple_user', JSON.stringify(data.user))
+
+  return data.user
+}
+
+export interface AdminUserSummary {
+  id: number
+  username: string
+  nickname: string
+  active_title?: string | null
+  titles?: string[]
+  created_at: string
+}
+
+export async function fetchAllUsers(adminId: number, adminUsername: string) {
+  const params = new URLSearchParams({
+    adminId: String(adminId),
+    adminUsername
+  })
+  const response = await fetch(`/api/admin/users?${params.toString()}`)
+
+  let data: { users?: AdminUserSummary[]; error?: string } | null = null
+  try {
+    data = await response.json()
+  } catch (error) {
+    console.error('Failed to parse admin users response:', error)
+  }
+
+  if (!response.ok || !data?.users) {
+    const message = data?.error ?? '사용자 목록을 불러오는 중 오류가 발생했습니다'
+    throw new Error(message)
+  }
+
+  return data.users
+}
+
+export async function resetUserPassword(adminId: number, userId: number, newPassword: string) {
+  const response = await fetch('/api/admin/reset-password', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ adminId, userId, newPassword })
+  })
+
+  let data: { success?: boolean; error?: string } | null = null
+  try {
+    data = await response.json()
+  } catch (error) {
+    console.error('Failed to parse reset password response:', error)
+  }
+
+  if (!response.ok || !data?.success) {
+    const message = data?.error ?? '비밀번호 재설정 중 오류가 발생했습니다'
+    throw new Error(message)
+  }
+
+  return data.success
+}
+
+export async function fetchUserTitles(userId: number) {
+  const response = await fetch(`/api/auth/titles?userId=${userId}`)
+
+  let data: { titles?: string[]; error?: string } | null = null
+  try {
+    data = await response.json()
+  } catch (error) {
+    console.error('Failed to parse user titles response:', error)
+  }
+
+  if (!response.ok || !data?.titles) {
+    const message = data?.error ?? '칭호 목록을 불러오는 중 오류가 발생했습니다'
+    throw new Error(message)
+  }
+
+  return data.titles
+}
+
+export async function setActiveTitle(userId: number, title: string | null) {
+  const response = await fetch('/api/auth/set-active-title', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ userId, title })
+  })
+
+  let data: { user?: User; error?: string } | null = null
+  try {
+    data = await response.json()
+  } catch (error) {
+    console.error('Failed to parse set active title response:', error)
+  }
+
+  if (!response.ok || !data?.user) {
+    const message = data?.error ?? '칭호를 설정하는 중 오류가 발생했습니다'
+    throw new Error(message)
+  }
+
+  localStorage.setItem('pokeapple_user', JSON.stringify(data.user))
+
+  return data.user
+}
+
+export async function grantTitle(adminId: number, userId: number, title: string) {
+  const response = await fetch('/api/admin/grant-title', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ adminId, userId, title })
+  })
+
+  let data: { success?: boolean; error?: string; alreadyHadTitle?: boolean } | null = null
+  try {
+    data = await response.json()
+  } catch (error) {
+    console.error('Failed to parse grant title response:', error)
+  }
+
+  if (!response.ok || !data?.success) {
+    const message = data?.error ?? '칭호 수여 중 오류가 발생했습니다'
+    throw new Error(message)
+  }
+
+  return data.success
+}
+
+export async function findUsernameByNickname(nickname: string) {
+  const { data, error } = await supabase
+    .from('users')
+    .select('username')
+    .eq('nickname', nickname)
+    .maybeSingle()
+
+  if (error) {
     throw error
+  }
+
+  return data?.username ?? null
+}
+
+export async function findPasswordByNicknameAndUsername(nickname: string, username: string) {
+  const { data, error } = await supabase
+    .from('users')
+    .select('password_hash')
+    .eq('nickname', nickname)
+    .eq('username', username)
+    .maybeSingle()
+
+  if (error) {
+    throw error
+  }
+
+  if (!data?.password_hash) {
+    return null
+  }
+
+  // 테스트용이라 바로 복호화 (실제 서비스에서는 절대 금지)
+  try {
+    const decoded = atob(data.password_hash)
+    return decoded.replace('pokeapple_salt', '')
+  } catch (error) {
+    console.error('Failed to decode password hash:', error)
+    return null
   }
 }
 
 export async function getCurrentUser(): Promise<User | null> {
   try {
     console.log('Getting current user from localStorage...')
-    
-    // 1. Get user data from localStorage
+
     const userData = localStorage.getItem('pokeapple_user')
     if (!userData) {
       console.log('No user data in localStorage')
@@ -195,29 +380,35 @@ export async function getCurrentUser(): Promise<User | null> {
 
     const user = JSON.parse(userData)
     console.log('Found user in localStorage:', user.id)
-    
-    // 2. Verify user still exists in database
-    const { data: dbUser, error: dbError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', user.id)
-      .single()
-    
-    console.log('Database verification result:', { dbUser: dbUser ? 'Found' : 'Not found', dbError })
-    
-    if (dbError || !dbUser) {
-      console.log('User not found in database, clearing localStorage')
-      localStorage.removeItem('pokeapple_user')
-      return null
+
+    try {
+      const { data: dbUser, error: dbError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle()
+
+      if (dbError) {
+        console.warn('Database verification error, using cached user:', dbError)
+        return user
+      }
+
+      if (!dbUser) {
+        console.log('User not found in database, clearing localStorage')
+        localStorage.removeItem('pokeapple_user')
+        return null
+      }
+
+      if (JSON.stringify(dbUser) !== userData) {
+        console.log('Updating localStorage with latest user data')
+        localStorage.setItem('pokeapple_user', JSON.stringify(dbUser))
+      }
+
+      return dbUser as User
+    } catch (dbError) {
+      console.warn('Error verifying user in database, falling back to cached user:', dbError)
+      return user
     }
-    
-    // 3. Update localStorage with latest data
-    if (JSON.stringify(dbUser) !== userData) {
-      console.log('Updating localStorage with latest user data')
-      localStorage.setItem('pokeapple_user', JSON.stringify(dbUser))
-    }
-    
-    return dbUser
   } catch (error) {
     console.error('Error getting current user:', error)
     return null
@@ -298,7 +489,7 @@ export async function getRankingsByMode(mode: GameMode, limit = 10) {
     }
 
     const data = await response.json()
-    return data.rankings || []
+    return (data.rankings ?? []) as RankingEntryWithTitle[]
   } catch (error) {
     console.error('Error fetching rankings:', error)
     return []

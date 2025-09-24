@@ -51,3 +51,7 @@ export const ANIMATION = {
   STATE_UPDATE_DELAY: 100, // ms
   MAX_SHUFFLE_COUNT: 5,
 } as const
+
+export const HINT_CONFIG = {
+  AUTO_REVEAL_DELAY_MS: 5000,
+} as const

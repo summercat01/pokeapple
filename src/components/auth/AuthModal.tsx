@@ -67,6 +67,8 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'login' }: Aut
         newErrors.nickname = '닉네임을 입력해주세요'
       } else if (formData.nickname.length < 2) {
         newErrors.nickname = '닉네임은 2자 이상이어야 합니다'
+      } else if (formData.nickname.length > 8) {
+        newErrors.nickname = '닉네임은 최대 8자까지 가능합니다'
       }
     }
 
@@ -193,6 +195,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'login' }: Aut
               <input
                 type="text"
                 id="nickname"
+              maxLength={8}
                 value={formData.nickname}
                 onChange={(e) => handleInputChange('nickname', e.target.value)}
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${

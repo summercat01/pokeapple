@@ -105,6 +105,7 @@ export default function GameBoard({ initialMode = 'normal' }: GameBoardProps) {
       if (validateTileTypeMatch(selectedTiles)) {
         // 성공! 점수 추가 및 타일 제거 (한 번의 순회로 처리)
         const points = selectedTiles.length
+        const selectedIncludesHint = selectedTiles.some(tile => tile.isHinted)
         
         const boardWithAnimation = gameState.gameState.board.map(row =>
           row.map(tile => {
@@ -118,7 +119,8 @@ export default function GameBoard({ initialMode = 'normal' }: GameBoardProps) {
                 isRemoving: true,
                 bounceX,
                 bounceY,
-                isSelected: false 
+                isSelected: false,
+                isHinted: false
               }
             }
             return { ...tile, isSelected: false }
@@ -130,6 +132,10 @@ export default function GameBoard({ initialMode = 'normal' }: GameBoardProps) {
           board: boardWithAnimation,
           score: gameState.gameState.score + points
         })
+
+        if (selectedIncludesHint) {
+          gameState.clearHints({ forceNewDelay: true })
+        }
         
         audio.playSuccessSound()
         
@@ -147,23 +153,26 @@ export default function GameBoard({ initialMode = 'normal' }: GameBoardProps) {
                     pokemon: {} as Pokemon,
                     isRemoving: false,
                     bounceX: undefined,
-                    bounceY: undefined
+                    bounceY: undefined,
+                    isHinted: false
                   }
                 }
-                return tile
+                return { ...tile }
               })
             )
             
-            return {
+            const newGameState = {
               ...prev,
               board: finalBoard
             }
+            
+            // 타일 제거 완료 후 즉시 셔플 체크 (finalBoard 사용)
+            setTimeout(async () => {
+              await gameState.checkAndShuffleAfterTileRemoval(finalBoard)
+            }, 50)
+            
+            return newGameState
           })
-          
-          // 셔플 체크
-          setTimeout(async () => {
-            await gameState.checkAndShuffle()
-          }, ANIMATION.STATE_UPDATE_DELAY)
         }, ANIMATION.TILE_REMOVE_DURATION)
       } else {
         // 실패! 효과음만 재생 (상태 업데이트 불필요)

@@ -9,6 +9,7 @@ export interface GameTile {
   isEmpty?: boolean
   bounceX?: number
   bounceY?: number
+  isHinted?: boolean
 }
 
 export type GameMode = 'normal' | 'beginner'

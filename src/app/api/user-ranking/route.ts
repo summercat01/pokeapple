@@ -60,14 +60,22 @@ export async function GET(request: NextRequest) {
     // 사용자 정보 조회
     const { data: user, error: userError } = await supabase
       .from('users')
-      .select('id, normal_best_score, beginner_best_score')
+      .select('id, normal_best_score, beginner_best_score, active_title')
       .eq('id', userId)
-      .single()
+      .maybeSingle()
 
-    if (userError || !user) {
+    if (userError) {
+      console.error('User lookup error:', userError)
       return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404, headers: corsHeaders }
+        { ranking: null },
+        { status: 200, headers: corsHeaders }
+      )
+    }
+
+    if (!user) {
+      return NextResponse.json(
+        { ranking: null },
+        { status: 200, headers: corsHeaders }
       )
     }
 
@@ -117,7 +125,8 @@ export async function GET(request: NextRequest) {
         ranking: {
           rank,
           score: userScore,
-          totalPlayers: totalPlayers || 0
+          totalPlayers: totalPlayers || 0,
+          active_title: user.active_title || null
         }
       },
       { status: 200, headers: corsHeaders }

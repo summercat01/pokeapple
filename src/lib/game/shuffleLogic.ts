@@ -7,49 +7,59 @@ import { GameTile } from '@/types/game'
  * @returns 드래그로 선택 가능한 매치가 있으면 true
  */
 export function hasValidMatches(board: GameTile[][]): boolean {
+  return Boolean(findHintCombination(board))
+}
+
+/**
+ * 드래그로 선택 가능한 첫 번째 매치 조합을 찾아 반환
+ * @returns 매치를 구성하는 타일 배열 또는 null (없을 경우)
+ */
+export function findHintCombination(board: GameTile[][]): GameTile[] | null {
   const rows = board.length
-  const cols = board[0].length
-  
-  // 1. 먼저 인접한 2개 타일 체크 (가로/세로)
+  if (rows === 0) return null
+  const cols = board[0]?.length ?? 0
+
+  // 1. 인접한 2개 타일 먼저 확인 (가장 간단한 매치)
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
       const currentTile = board[row][col]
-      if (currentTile.isEmpty || !currentTile.pokemon) continue
-      
+      if (currentTile.isEmpty || !currentTile.pokemon || currentTile.isRemoving) continue
+
       // 오른쪽 타일과 비교
       if (col + 1 < cols) {
         const rightTile = board[row][col + 1]
-        if (!rightTile.isEmpty && rightTile.pokemon && hasCommonType(currentTile, rightTile)) {
-          return true
+        if (!rightTile.isEmpty && !rightTile.isRemoving && rightTile.pokemon && hasCommonType(currentTile, rightTile)) {
+          return [currentTile, rightTile]
         }
       }
-      
+
       // 아래쪽 타일과 비교
       if (row + 1 < rows) {
         const bottomTile = board[row + 1][col]
-        if (!bottomTile.isEmpty && bottomTile.pokemon && hasCommonType(currentTile, bottomTile)) {
-          return true
+        if (!bottomTile.isEmpty && !bottomTile.isRemoving && bottomTile.pokemon && hasCommonType(currentTile, bottomTile)) {
+          return [currentTile, bottomTile]
         }
       }
     }
   }
-  
+
   // 2. 작은 직사각형 영역들 체크 (2x2, 2x3, 3x2 등)
   const maxSize = 4 // 최대 4x4까지만 체크
-  
-  for (let size1 = 2; size1 <= maxSize; size1++) {
-    for (let size2 = 2; size2 <= maxSize; size2++) {
-      for (let startRow = 0; startRow <= rows - size1; startRow++) {
-        for (let startCol = 0; startCol <= cols - size2; startCol++) {
-          if (checkRectangleMatch(board, startRow, startCol, size1, size2)) {
-            return true
+
+  for (let height = 2; height <= maxSize; height++) {
+    for (let width = 2; width <= maxSize; width++) {
+      for (let startRow = 0; startRow <= rows - height; startRow++) {
+        for (let startCol = 0; startCol <= cols - width; startCol++) {
+          const matchedTiles = checkRectangleMatch(board, startRow, startCol, height, width)
+          if (matchedTiles) {
+            return matchedTiles
           }
         }
       }
     }
   }
-  
-  return false
+
+  return null
 }
 
 /**
@@ -71,7 +81,7 @@ function checkRectangleMatch(
   startCol: number,
   height: number,
   width: number
-): boolean {
+): GameTile[] | null {
   const tilesInArea: GameTile[] = []
   
   // 영역 내 모든 타일 확인
@@ -80,8 +90,8 @@ function checkRectangleMatch(
       const tile = board[row][col]
       
       // 빈 타일이 하나라도 있으면 직사각형 매치 불가능
-      if (tile.isEmpty || !tile.pokemon) {
-        return false
+      if (tile.isEmpty || !tile.pokemon || tile.isRemoving) {
+        return null
       }
       
       tilesInArea.push(tile)
@@ -90,7 +100,7 @@ function checkRectangleMatch(
   
   // 최소 2개 이상의 타일이 있어야 함
   if (tilesInArea.length < 2) {
-    return false
+    return null
   }
   
   // 첫 번째 타일의 각 타입에 대해 확인
@@ -104,11 +114,11 @@ function checkRectangleMatch(
     
     if (allHaveThisType) {
       // 이 타입으로 매치 가능!
-      return true
+      return tilesInArea
     }
   }
   
-  return false
+  return null
 }
 
 /**
@@ -139,7 +149,7 @@ export function shuffleExistingTiles(board: GameTile[][], seed?: number): GameTi
   
   // 새 보드 생성
   const newBoard: GameTile[][] = board.map(row => 
-    row.map(tile => ({ ...tile, isSelected: false }))
+    row.map(tile => ({ ...tile, isSelected: false, isHinted: false }))
   )
   
   // 셔플된 포켓몬들을 비어있지 않은 위치에 다시 배치
@@ -188,7 +198,7 @@ function seededShuffleArray<T>(array: T[], seed: number): T[] {
 export function hasRemainingPokemon(board: GameTile[][]): boolean {
   for (const row of board) {
     for (const tile of row) {
-      if (!tile.isEmpty && tile.pokemon) {
+      if (!tile.isEmpty && !tile.isRemoving && tile.pokemon) {
         return true
       }
     }
