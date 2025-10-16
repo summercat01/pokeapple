@@ -6,17 +6,29 @@ import UserStatus from '@/components/auth/UserStatus'
 import AuthModal from '@/components/auth/AuthModal'
 import CredentialRecoveryModal from '@/components/auth/CredentialRecoveryModal'
 import RankingSidebar from './RankingSidebar'
+import { HelpButton, HelpModal, DEFAULT_HELP_TAB_ID, type HelpTabId } from '@/components/Help'
 import packageJson from '../../../package.json'
 
 interface DevNote {
   version: string
   summary: string
   items: string[]
+  date: string
 }
 
 const devNotes: DevNote[] = [
   {
+    version: '0.5.0',
+    date: '2025.10.16',
+    summary: '도움말 기능 추가, 힌트 기능 제공',
+    items: [
+      '도움말 기능을 통해 게임 방법 확인',
+      '5초 동안 매치를 찾지 못하면 자동으로 힌트가 제공'
+    ]
+  },
+  {
     version: '0.4.0',
+    date: '2025.09.21',
     summary: '관리자 페이지 추가, 점수 올리기 버그 픽스, 아이디/비밀번호 찾기 기능 추가',
     items: [
       '관리자 페이지 추가로 칭호 관리 등 운영 기능 제공',
@@ -26,6 +38,7 @@ const devNotes: DevNote[] = [
   },
   {
     version: '0.3.0',
+    date: '2025.08.25',
     summary: '로그인 기능 및 랭킹 시스템 구현',
     items: [
       '커스텀 로그인/로그아웃 기능 추가',
@@ -34,6 +47,7 @@ const devNotes: DevNote[] = [
   },
   {
     version: '0.2.0',
+    date: '2025.07.29',
     summary: '게임 로직 버그 수정, 오픈 채팅방 개설',
     items: [
       '게임 로직 버그 다수 수정',
@@ -42,6 +56,7 @@ const devNotes: DevNote[] = [
   },
   {
     version: '0.1.0',
+    date: '2025.07.22',
     summary: '포켓몬 사과게임 초기 버전',
     items: [
       '포켓몬 사과게임 프로젝트 시작',
@@ -79,6 +94,8 @@ export default function GameOverlays({
   const [isRecoveryModalOpen, setIsRecoveryModalOpen] = useState(false)
   const [isDevNoteOpen, setIsDevNoteOpen] = useState(false)
   const [expandedNotes, setExpandedNotes] = useState(() => devNotes.map((_, index) => index === 0))
+  const [isHelpOpen, setIsHelpOpen] = useState(false)
+  const [activeHelpTab, setActiveHelpTab] = useState<HelpTabId>(DEFAULT_HELP_TAB_ID)
 
   const toggleDevNote = (index: number) => {
     setExpandedNotes(prev => prev.map((isExpanded, idx) => (idx === index ? !isExpanded : isExpanded)))
@@ -154,17 +171,16 @@ export default function GameOverlays({
                   aria-expanded={isExpanded}
                 >
                   <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <p className="text-sm font-semibold text-gray-500">v{note.version}</p>
+                    <div className="w-full">
+                      <div className="flex items-center justify-between text-gray-500">
+                        <p className="text-sm font-semibold">v{note.version}</p>
+                        <p className="text-xs text-gray-400">{note.date}</p>
+                      </div>
                       <p className="text-base font-semibold text-gray-800">
                         {note.summary}
                       </p>
                     </div>
-                    {index === 0 && (
-                      <span className="text-[10px] font-bold text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded-full">
-                        최신
-                      </span>
-                    )}
+                    {/* 최신 뱃지 제거 */}
                   </div>
                   {isExpanded && (
                     <ul className="list-disc list-inside space-y-1 text-sm text-gray-600">
@@ -195,146 +211,121 @@ export default function GameOverlays({
   if (gamePhase === 'main') {
     return (
       <>
-        <div 
-          className="absolute inset-0 rounded-lg z-10"
-          style={{ backgroundColor: '#d5f6cd' }}
-        >
-          {/* Left: RankingSidebar - 절대 위치로 오버레이 */}
-          <div className="absolute left-4 top-4 bottom-4 w-80 z-20">
-            <RankingSidebar 
-              selectedMode={selectedMode}
-              onModeChange={onModeChange}
-            />
-          </div>
-
-          {/* Center: Game content - 화면 전체 중앙 */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            {/* UserStatus - 오른쪽 상단에 절대 위치 */}
-            <div className="absolute top-4 right-4 z-20">
-              <UserStatus onLoginClick={handleLoginClick} onRecoveryClick={handleRecoveryClick} />
+        <div className="absolute inset-0 z-20 flex">
+          <div className="relative flex h-full w-full rounded-lg bg-[#d5f6cd] px-10 py-8 gap-8">
+            <div className="hidden xl:flex w-[320px] flex-col">
+              <RankingSidebar selectedMode={selectedMode} onModeChange={onModeChange} />
             </div>
 
-            {/* Version & Dev Notes - 오른쪽 하단에 절대 위치 */}
-            <div className="absolute bottom-4 right-4 z-20 flex flex-col items-end gap-2">
-              <button
-                onClick={() => setIsDevNoteOpen(true)}
-                className="text-xs font-semibold px-3 py-1 rounded border border-gray-300 bg-white bg-opacity-90 hover:bg-opacity-100 shadow-sm transition-all duration-200 hover:scale-105"
-              >
-                개발자 노트
-              </button>
-              <span 
-                className="text-sm font-semibold px-2 py-1 rounded"
-                style={{ color: '#ff3603' }}
-              >
-                v{packageJson.version}
-              </span>
-            </div>
-
-            {/* 개발자 정보 - 하단 중앙에 절대 위치 */}
-              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20 text-center">
-                <div className="mb-2">
-                  <Image 
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent('https://invite.kakao.com/tc/62Ss7gpVRc')}`}
-                    alt="카카오톡방 QR 코드"
-                    width={80}
-                    height={80}
-                    className="mx-auto bg-white p-1 rounded shadow-sm hover:scale-110 transition-transform duration-200"
-                    unoptimized
-                  />
-                </div>
-                <p className="text-sm font-semibold text-gray-700 mb-1">
-                  QR코드 또는 아래를 클릭하여 오픈 채팅방에 참여하세요
-                </p>
-                <a 
-                  href="https://invite.kakao.com/tc/62Ss7gpVRc" 
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm font-semibold px-3 py-1 rounded underline hover:underline-offset-4 transition-all duration-200 hover:scale-105"
-                  style={{ color: '#00cc66' }}
-                >
-                  카카오톡 오픈채팅 참여하기
-                </a>
+            <div className="flex flex-1 flex-col xl:-ml-80">
+              <div className="flex items-start justify-end">
+                <UserStatus onLoginClick={handleLoginClick} onRecoveryClick={handleRecoveryClick} />
               </div>
 
-            <div className="text-center">
-                <h1 className="text-6xl font-bold mb-8">
+              <div className="flex flex-1 flex-col items-center justify-center gap-6 text-center px-4">
+                <h1 className="text-5xl sm:text-6xl font-bold">
                   <span style={{ color: '#ff6600' }}>포켓몬 </span>
                   <span style={{ color: '#00cc66' }}>사과게임</span>
                 </h1>
-                
-                {/* 모드 선택 섹션 */}
-                <div className="mb-8">
-                  <div className="flex items-center justify-center gap-4 mb-2">
-                    <button
-                      onClick={() => onModeChange('normal')}
-                      className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 ${
-                        selectedMode === 'normal' 
-                          ? 'text-white shadow-lg' 
-                          : 'text-gray-600 bg-white bg-opacity-50'
-                      }`}
-                      style={{
-                        backgroundColor: selectedMode === 'normal' ? '#3b82f6' : undefined
-                      }}
-                    >
-                      🎯 일반모드
-                    </button>
-                    
-                    <button
-                      onClick={() => onModeChange('beginner')}
-                      className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 ${
-                        selectedMode === 'beginner' 
-                          ? 'text-white shadow-lg' 
-                          : 'text-gray-600 bg-white bg-opacity-50'
-                      }`}
-                      style={{
-                        backgroundColor: selectedMode === 'beginner' ? '#10b981' : undefined
-                      }}
-                    >
-                      🌱 초보자모드
-                    </button>
-                  </div>
+
+                <div className="flex flex-wrap justify-center gap-4">
+                  <button
+                    onClick={() => onModeChange('normal')}
+                    className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 ${
+                      selectedMode === 'normal' ? 'text-white shadow-lg' : 'text-gray-600 bg-white/80'
+                    }`}
+                    style={{ backgroundColor: selectedMode === 'normal' ? '#3b82f6' : undefined }}
+                  >
+                    🎯 일반모드
+                  </button>
+                  <button
+                    onClick={() => onModeChange('beginner')}
+                    className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 ${
+                      selectedMode === 'beginner' ? 'text-white shadow-lg' : 'text-gray-600 bg-white/80'
+                    }`}
+                    style={{ backgroundColor: selectedMode === 'beginner' ? '#10b981' : undefined }}
+                  >
+                    🌱 초보자모드
+                  </button>
                 </div>
-                
+
                 <button
                   onClick={onStartCountdown}
-                  className="text-white font-bold text-4xl px-16 py-8 rounded-full shadow-2xl transition-all duration-200 hover:scale-105 border-4 mb-8"
-                  style={{
-                    backgroundColor: '#ff3603',
-                    borderColor: '#ff3603'
-                  }}
+                  className="text-white font-bold text-3xl sm:text-4xl px-12 py-6 rounded-full shadow-2xl transition-all duration-200 hover:scale-105 border-4"
+                  style={{ backgroundColor: '#ff3603', borderColor: '#ff3603' }}
                 >
                   🎮 Play
                 </button>
-                
-                <p className="text-xl text-gray-700 max-w-2xl mx-auto mb-8">
-                  같은 타입의 포켓몬들을 드래그로 선택하여 점수를 얻으세요!
-                  <br/>
-                  복합 타입 포켓몬은 어느 타입으로든 매칭 가능합니다.
-                  <br/>
-                  5초 동안 매치를 찾지 못하면 자동으로 힌트가 제공됩니다.
-                </p>
-                
-            {/* 음악 설정 버튼 */}
-            <div className="flex justify-center mb-6">
+
+
+                <div className="flex justify-center">
                   <button
                     onClick={onToggleMusic}
-                className="bg-gray-600 hover:bg-gray-700 text-white font-semibold text-base px-4 py-2 rounded-full shadow-lg transition-all duration-200 hover:scale-105 border border-gray-600"
+                    className="bg-gray-600 hover:bg-gray-700 text-white font-semibold px-4 py-2 rounded-full shadow-lg transition-all duration-200 hover:scale-105 border border-gray-600"
                   >
                     {isMusicEnabled ? '🎵 음악 ON' : '🔇 음악 OFF'}
                   </button>
                 </div>
+              </div>
+
+              <div className="flex flex-col items-center gap-3 pb-2 text-sm text-gray-700">
+                <Image
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent('https://invite.kakao.com/tc/62Ss7gpVRc')}`}
+                  alt="카카오톡방 QR 코드"
+                  width={80}
+                  height={80}
+                  className="bg-white p-1 rounded shadow-sm"
+                  unoptimized
+                />
+                <p>QR코드 또는 아래를 클릭하여 오픈 채팅방에 참여하세요</p>
+                <a
+                  href="https://invite.kakao.com/tc/62Ss7gpVRc"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm font-semibold underline"
+                  style={{ color: '#00cc66' }}
+                >
+                  카카오톡 오픈채팅 참여하기
+                </a>
+                <a
+                  href="https://github.com/summercat01/pokeapple"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-1 text-sm font-semibold text-gray-700 bg-white/80 px-3 py-1 rounded-full shadow-sm hover:shadow transition-all duration-200 hover:scale-105"
+                >
+                  Developed by 고재우
+                </a>
+              </div>
+            </div>
+
+            <div className="absolute bottom-8 left-8">
+              <HelpButton onClick={() => setIsHelpOpen(true)} className="ml-10" />
+            </div>
+
+            <div className="absolute bottom-8 right-8 flex flex-col items-end gap-2">
+              <button
+                onClick={() => setIsDevNoteOpen(true)}
+                className="text-xs font-semibold px-4 py-2 rounded border border-gray-300 bg-white/90 shadow-sm transition-all duration-200 hover:scale-105"
+              >
+                개발자 노트
+              </button>
+              <span className="text-sm font-semibold" style={{ color: '#ff3603' }}>
+                v{packageJson.version}
+              </span>
             </div>
           </div>
         </div>
 
-        {/* AuthModal */}
         {renderAuthModal()}
-
-        {/* CredentialRecoveryModal */}
         {renderRecoveryModal()}
-
-        {/* Dev Note Modal */}
         {renderDevNoteModal()}
+
+        <HelpModal
+          isOpen={isHelpOpen}
+          onClose={() => setIsHelpOpen(false)}
+          activeTab={activeHelpTab}
+          onTabChange={setActiveHelpTab}
+        />
       </>
     )
   }

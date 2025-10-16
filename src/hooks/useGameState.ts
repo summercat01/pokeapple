@@ -10,7 +10,7 @@ import { validateScoreSubmission, startGameSession, endGameSession, validateGame
 import { HINT_CONFIG } from '@/constants/gameConstants'
 
 // --- 1. 상태, 액션 타입 정의 ---
-export type GamePhase = 'main' | 'countdown' | 'playing' | 'gameOver'
+export type GamePhase = 'main' | 'countdown' | 'playing' | 'paused' | 'gameOver'
 
 interface ReducerState {
   gameState: GameState
@@ -22,6 +22,7 @@ interface ReducerState {
   scoreSaved: boolean
   lastScoreTimestamp: number
   hintActive: boolean
+  pausedFrom: GamePhase | null
 }
 
 type Action = 
@@ -29,6 +30,8 @@ type Action =
   | { type: 'START_COUNTDOWN' }
   | { type: 'DECREMENT_COUNTDOWN' }
   | { type: 'START_PLAYING' }
+  | { type: 'PAUSE_GAME' }
+  | { type: 'RESUME_GAME' }
   | { type: 'TICK' } // 시간 감소 액션
   | { type: 'END_GAME' }
   | { type: 'RESET_GAME' }
@@ -60,17 +63,27 @@ function gameReducer(state: ReducerState, action: Action): ReducerState {
         gameState: {
           ...state.gameState,
           timeLeft: GAME_MODE_CONFIGS[state.selectedMode].timeLimit
-        }
+        },
+        pausedFrom: null
       }
     case 'DECREMENT_COUNTDOWN':
       return { ...state, countdownNumber: state.countdownNumber - 1 }
     case 'START_PLAYING':
-      return { ...state, gamePhase: 'playing' }
+      return { ...state, gamePhase: 'playing', pausedFrom: null }
+    case 'PAUSE_GAME': {
+      if (state.gamePhase !== 'playing' && state.gamePhase !== 'countdown') return state
+      return { ...state, gamePhase: 'paused', pausedFrom: state.gamePhase }
+    }
+    case 'RESUME_GAME': {
+      if (state.gamePhase !== 'paused') return state
+      const resumePhase = state.pausedFrom && state.pausedFrom !== 'paused' ? state.pausedFrom : 'playing'
+      return { ...state, gamePhase: resumePhase, pausedFrom: null }
+    }
     case 'TICK':
       if (state.gamePhase !== 'playing') return state
       return { ...state, gameState: { ...state.gameState, timeLeft: state.gameState.timeLeft - 1 } }
     case 'END_GAME':
-      return { ...state, gamePhase: 'gameOver' }
+      return { ...state, gamePhase: 'gameOver', pausedFrom: null }
     case 'RESET_GAME': {
       const resetState = getInitialState(state.selectedMode)
       return {
@@ -80,7 +93,8 @@ function gameReducer(state: ReducerState, action: Action): ReducerState {
           score: 0,
           timeLeft: GAME_MODE_CONFIGS[state.selectedMode].timeLimit
         },
-        gamePhase: 'main'
+        gamePhase: 'main',
+        pausedFrom: null
       }
     }
     case 'RESET_SHUFFLE_COUNT':
@@ -147,7 +161,8 @@ function getInitialState(mode: GameMode): ReducerState {
     shuffleCount: 0,
     scoreSaved: false,
     lastScoreTimestamp: Date.now(),
-    hintActive: false
+    hintActive: false,
+    pausedFrom: null
   }
 }
 
@@ -322,6 +337,14 @@ export function useGameState(initialMode: GameMode = 'normal') {
     dispatch({ type: 'CHANGE_MODE', mode })
   }, [])
 
+  const pauseGame = useCallback(() => {
+    dispatch({ type: 'PAUSE_GAME' })
+  }, [])
+
+  const resumeGame = useCallback(() => {
+    dispatch({ type: 'RESUME_GAME' })
+  }, [])
+
   // 카운트다운 로직
   useEffect(() => {
     if (gamePhase !== 'countdown') return
@@ -427,6 +450,8 @@ export function useGameState(initialMode: GameMode = 'normal') {
     handleSaveScore,
     changeMode,
     setSelectedMode: changeMode,
+    pauseGame,
+    resumeGame,
     timeLeft: gameState.timeLeft,
     setTimeLeft: () => dispatch({ type: 'TICK' }),
     isHintActive: hintActive,

@@ -7,9 +7,9 @@ import TileGrid from './TileGrid'
 import GameOverlays from './GameOverlays'
 import { useGameState } from '@/hooks/useGameState'
 import { useGameAudio } from '@/hooks/useGameAudio'
-import { 
-  GAME_LAYOUT, 
-  GAME_COLORS, 
+import {
+  GAME_LAYOUT,
+  GAME_COLORS,
   ANIMATION
 } from '@/constants/gameConstants'
 import { getSelectedTilesInDragArea, validateTileTypeMatch } from '@/utils/dragUtils'
@@ -27,7 +27,6 @@ export default function GameBoard({ initialMode = 'normal' }: GameBoardProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const [dragEnd, setDragEnd] = useState({ x: 0, y: 0 })
-
   // 타이머 로직은 useGameState에서 처리됨
 
   // 게임 시작 핸들러
