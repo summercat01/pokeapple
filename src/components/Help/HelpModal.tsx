@@ -70,10 +70,7 @@ export default function HelpModal({ isOpen, onClose, activeTab, onTabChange }: H
                 >
                   {type.label.slice(0, 1)}
                 </span>
-                <div>
-                  <p className="text-sm font-semibold text-gray-800">{type.label}</p>
-                  <p className="text-xs text-gray-500">{type.description}</p>
-                </div>
+                <p className="text-sm font-semibold text-gray-800">{type.label}</p>
               </div>
             ))}
           </div>
