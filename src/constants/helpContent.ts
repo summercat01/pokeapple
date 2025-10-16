@@ -8,7 +8,6 @@ export interface PokemonTypeInfo {
   id: string
   label: string
   color: string
-  description: string
 }
 
 export type HelpTabId = 'how-to-play' | 'pokemon-types' | 'score-and-tips'
