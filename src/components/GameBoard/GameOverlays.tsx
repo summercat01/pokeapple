@@ -38,7 +38,7 @@ const devNotes: DevNote[] = [
   },
   {
     version: '0.3.0',
-    date: '2025.08.25',
+    date: '2025.07.29',
     summary: '로그인 기능 및 랭킹 시스템 구현',
     items: [
       '커스텀 로그인/로그아웃 기능 추가',
@@ -47,7 +47,7 @@ const devNotes: DevNote[] = [
   },
   {
     version: '0.2.0',
-    date: '2025.07.29',
+    date: '2025.07.22',
     summary: '게임 로직 버그 수정, 오픈 채팅방 개설',
     items: [
       '게임 로직 버그 다수 수정',
@@ -56,7 +56,7 @@ const devNotes: DevNote[] = [
   },
   {
     version: '0.1.0',
-    date: '2025.07.22',
+    date: '2025.06.29',
     summary: '포켓몬 사과게임 초기 버전',
     items: [
       '포켓몬 사과게임 프로젝트 시작',
