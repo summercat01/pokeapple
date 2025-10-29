@@ -46,11 +46,6 @@ export default function GameBoard({ initialMode = 'normal' }: GameBoardProps) {
     audio.toggleMusic(gameState.gamePhase)
   }
 
-  // 모드 변경 핸들러
-  const handleModeChange = (mode: GameMode) => {
-    gameState.setSelectedMode(mode)
-  }
-
   // 게임 재시작 핸들러
   const handleRestart = () => {
     gameState.resetGame()
@@ -300,14 +295,12 @@ export default function GameBoard({ initialMode = 'normal' }: GameBoardProps) {
           <GameOverlays
             gamePhase={gameState.gamePhase}
             countdownNumber={gameState.countdownNumber}
-            selectedMode={gameState.selectedMode}
             gameScore={gameState.gameState.score}
             isShuffling={gameState.isShuffling}
             isMusicEnabled={audio.isMusicEnabled}
             onStartCountdown={handleStartCountdown}
             onResetGame={handleResetGame}
             onToggleMusic={handleToggleMusic}
-            onModeChange={handleModeChange}
             scoreSubmission={gameState.scoreSubmission}
             onPlayerNameChange={gameState.updatePlayerName}
             onSubmitScore={gameState.submitScore}

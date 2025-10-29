@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { GamePhase } from '@/hooks/useGameState'
-import { GameMode } from '@/types/game'
 import RankingSidebar from './RankingSidebar'
 import { HelpButton, HelpModal, DEFAULT_HELP_TAB_ID, type HelpTabId } from '@/components/Help'
 import packageJson from '../../../package.json'
@@ -72,14 +71,12 @@ interface ScoreSubmissionState {
 interface GameOverlaysProps {
   gamePhase: GamePhase
   countdownNumber: number
-  selectedMode: GameMode
   gameScore: number
   isShuffling: boolean
   isMusicEnabled: boolean
   onStartCountdown: () => void
   onResetGame: () => void
   onToggleMusic: () => void
-  onModeChange: (mode: GameMode) => void
   scoreSubmission: ScoreSubmissionState
   onPlayerNameChange: (name: string) => void
   onSubmitScore: () => void
@@ -88,14 +85,12 @@ interface GameOverlaysProps {
 export default function GameOverlays({
   gamePhase,
   countdownNumber,
-  selectedMode,
   gameScore,
   isShuffling,
   isMusicEnabled,
   onStartCountdown,
   onResetGame,
   onToggleMusic,
-  onModeChange,
   scoreSubmission,
   onPlayerNameChange,
   onSubmitScore
