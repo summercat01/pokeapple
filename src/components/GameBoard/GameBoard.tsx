@@ -308,6 +308,9 @@ export default function GameBoard({ initialMode = 'normal' }: GameBoardProps) {
             onResetGame={handleResetGame}
             onToggleMusic={handleToggleMusic}
             onModeChange={handleModeChange}
+            scoreSubmission={gameState.scoreSubmission}
+            onPlayerNameChange={gameState.updatePlayerName}
+            onSubmitScore={gameState.submitScore}
           />
         </div>
       </div>

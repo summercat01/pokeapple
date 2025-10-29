@@ -1,10 +1,7 @@
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { GamePhase } from '@/hooks/useGameState'
 import { GameMode } from '@/types/game'
-import UserStatus from '@/components/auth/UserStatus'
-import AuthModal from '@/components/auth/AuthModal'
-import CredentialRecoveryModal from '@/components/auth/CredentialRecoveryModal'
 import RankingSidebar from './RankingSidebar'
 import { HelpButton, HelpModal, DEFAULT_HELP_TAB_ID, type HelpTabId } from '@/components/Help'
 import packageJson from '../../../package.json'
@@ -65,6 +62,13 @@ const devNotes: DevNote[] = [
   }
 ]
 
+interface ScoreSubmissionState {
+  isDialogOpen: boolean
+  playerName: string
+  status: 'idle' | 'submitting' | 'success' | 'error'
+  errorMessage: string | null
+}
+
 interface GameOverlaysProps {
   gamePhase: GamePhase
   countdownNumber: number
@@ -76,6 +80,9 @@ interface GameOverlaysProps {
   onResetGame: () => void
   onToggleMusic: () => void
   onModeChange: (mode: GameMode) => void
+  scoreSubmission: ScoreSubmissionState
+  onPlayerNameChange: (name: string) => void
+  onSubmitScore: () => void
 }
 
 export default function GameOverlays({
@@ -88,49 +95,42 @@ export default function GameOverlays({
   onStartCountdown,
   onResetGame,
   onToggleMusic,
-  onModeChange
+  onModeChange,
+  scoreSubmission,
+  onPlayerNameChange,
+  onSubmitScore
 }: GameOverlaysProps) {
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
-  const [isRecoveryModalOpen, setIsRecoveryModalOpen] = useState(false)
   const [isDevNoteOpen, setIsDevNoteOpen] = useState(false)
   const [expandedNotes, setExpandedNotes] = useState(() => devNotes.map((_, index) => index === 0))
   const [isHelpOpen, setIsHelpOpen] = useState(false)
   const [activeHelpTab, setActiveHelpTab] = useState<HelpTabId>(DEFAULT_HELP_TAB_ID)
+  const autoResetTriggeredRef = useRef(false)
+
+  useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout> | undefined
+
+    if (gamePhase !== 'gameOver') {
+      autoResetTriggeredRef.current = false
+      return undefined
+    }
+
+    if (scoreSubmission.status === 'success' && !autoResetTriggeredRef.current) {
+      autoResetTriggeredRef.current = true
+      timeoutId = setTimeout(() => {
+        onResetGame()
+      }, 800)
+    }
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
+    }
+  }, [gamePhase, scoreSubmission.status, onResetGame])
 
   const toggleDevNote = (index: number) => {
     setExpandedNotes(prev => prev.map((isExpanded, idx) => (idx === index ? !isExpanded : isExpanded)))
   }
-  
-  const handleLoginClick = () => {
-    setIsAuthModalOpen(true)
-  }
-
-  const handleAuthModalClose = () => {
-    setIsAuthModalOpen(false)
-  }
-
-  const handleRecoveryClick = () => {
-    setIsRecoveryModalOpen(true)
-  }
-
-  const handleRecoveryClose = () => {
-    setIsRecoveryModalOpen(false)
-  }
-
-  // AuthModal 렌더링 함수 (중복 제거)
-  const renderAuthModal = () => (
-    <AuthModal 
-      isOpen={isAuthModalOpen}
-      onClose={handleAuthModalClose}
-    />
-  )
-
-  const renderRecoveryModal = () => (
-    <CredentialRecoveryModal
-      isOpen={isRecoveryModalOpen}
-      onClose={handleRecoveryClose}
-    />
-  )
 
   const renderDevNoteModal = () => {
     if (!isDevNoteOpen || devNotes.length === 0) return null
@@ -213,14 +213,12 @@ export default function GameOverlays({
       <>
         <div className="absolute inset-0 z-20 flex">
           <div className="relative flex h-full w-full rounded-lg bg-[#d5f6cd] px-10 py-8 gap-8">
-            <div className="hidden xl:flex w-[320px] flex-col">
-              <RankingSidebar selectedMode={selectedMode} onModeChange={onModeChange} />
+            <div className="hidden xl:flex w-[320px] flex-col relative z-20">
+              <RankingSidebar />
             </div>
 
-            <div className="flex flex-1 flex-col xl:-ml-80">
-              <div className="flex items-start justify-end">
-                <UserStatus onLoginClick={handleLoginClick} onRecoveryClick={handleRecoveryClick} />
-              </div>
+            <div className="flex flex-1 flex-col xl:-ml-40 xl:pl-8 relative z-10">
+
 
               <div className="flex flex-1 flex-col items-center justify-center gap-6 text-center px-4">
                 <h1 className="text-5xl sm:text-6xl font-bold">
@@ -228,26 +226,7 @@ export default function GameOverlays({
                   <span style={{ color: '#00cc66' }}>사과게임</span>
                 </h1>
 
-                <div className="flex flex-wrap justify-center gap-4">
-                  <button
-                    onClick={() => onModeChange('normal')}
-                    className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 ${
-                      selectedMode === 'normal' ? 'text-white shadow-lg' : 'text-gray-600 bg-white/80'
-                    }`}
-                    style={{ backgroundColor: selectedMode === 'normal' ? '#3b82f6' : undefined }}
-                  >
-                    🎯 일반모드
-                  </button>
-                  <button
-                    onClick={() => onModeChange('beginner')}
-                    className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 ${
-                      selectedMode === 'beginner' ? 'text-white shadow-lg' : 'text-gray-600 bg-white/80'
-                    }`}
-                    style={{ backgroundColor: selectedMode === 'beginner' ? '#10b981' : undefined }}
-                  >
-                    🌱 초보자모드
-                  </button>
-                </div>
+                <div className="flex flex-wrap justify-center gap-4" />
 
                 <button
                   onClick={onStartCountdown}
@@ -316,8 +295,6 @@ export default function GameOverlays({
           </div>
         </div>
 
-        {renderAuthModal()}
-        {renderRecoveryModal()}
         {renderDevNoteModal()}
 
         <HelpModal
@@ -349,8 +326,7 @@ export default function GameOverlays({
           </div>
         </div>
 
-        {/* AuthModal */}
-        {renderAuthModal()}
+        {renderDevNoteModal()}
       </>
     )
   }
@@ -375,8 +351,7 @@ export default function GameOverlays({
           </div>
         </div>
 
-        {/* AuthModal */}
-        {renderAuthModal()}
+        {renderDevNoteModal()}
       </>
     )
   }
@@ -414,6 +389,39 @@ export default function GameOverlays({
               </div>
             </div>
             
+              {scoreSubmission.isDialogOpen && (
+                <div className="mx-auto mb-10 w-full max-w-sm rounded-xl border border-orange-200 bg-white/90 p-5 shadow">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3">랭킹 등록</h3>
+                  <p className="text-xs text-gray-600 mb-3">랭킹에 등록할 이름을 입력해 주세요.(최대 8자)</p>
+                  <input
+                    type="text"
+                    value={scoreSubmission.playerName}
+                    onChange={(event) => onPlayerNameChange(event.target.value)}
+                    maxLength={8}
+                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-200 disabled:bg-gray-100"
+                    placeholder="이름 입력"
+                    disabled={scoreSubmission.status === 'submitting' || scoreSubmission.status === 'success'}
+                  />
+                  {scoreSubmission.errorMessage && (
+                    <p className="mt-2 text-xs text-red-500">{scoreSubmission.errorMessage}</p>
+                  )}
+                  {scoreSubmission.status === 'success' && (
+                    <p className="mt-2 text-xs text-green-600">점수를 저장했습니다!</p>
+                  )}
+                  {scoreSubmission.status !== 'success' && (
+                    <div className="mt-4 flex justify-end">
+                      <button
+                        onClick={onSubmitScore}
+                        className="rounded-md bg-orange-500 px-3 py-1.5 text-xs font-semibold text-white shadow hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-orange-300"
+                        disabled={scoreSubmission.status === 'submitting'}
+                      >
+                        {scoreSubmission.status === 'submitting' ? '저장 중...' : '등록'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
             {/* 메인으로 버튼 */}
             <button
               onClick={onResetGame}
@@ -429,10 +437,10 @@ export default function GameOverlays({
         </div>
 
         {/* AuthModal */}
-        {renderAuthModal()}
+        {/* renderAuthModal() */}
       </>
     )
   }
 
-  return renderAuthModal()
+  return null
 } 

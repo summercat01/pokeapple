@@ -1,25 +1,33 @@
-import React from 'react'
-import { GameMode } from '@/types/game'
+'use client'
+
+import React, { useMemo, useState } from 'react'
 import { useRanking } from '@/hooks/useRanking'
-import { useAuth } from '@/contexts/AuthContext'
 
-interface RankingSidebarProps {
-  selectedMode: GameMode
-  onModeChange: (mode: GameMode) => void
-}
+type RankingScope = 'all' | 'today'
 
-interface ExtendedRankingEntry {
+interface FixedRankingEntry {
   rank: number
-  username: string
-  nickname: string
-  active_title?: string | null
+  name: string
   score: number
   isEmpty?: boolean
 }
 
-export default function RankingSidebar({ selectedMode, onModeChange }: RankingSidebarProps) {
-  const { user } = useAuth()
-  const { rankings, myRanking, loading } = useRanking(selectedMode)
+const scopeInfo: Record<RankingScope, { label: string; description: string; color: string }> = {
+  all: {
+    label: '전체 랭킹',
+    description: '최고의 점수 상위 10명',
+    color: '#3b82f6'
+  },
+  today: {
+    label: '일간 랭킹',
+    description: '오늘의 기록 상위 10명',
+    color: '#10b981'
+  }
+}
+
+export default function RankingSidebar() {
+  const [scope, setScope] = useState<RankingScope>('all')
+  const { rankings, loading } = useRanking(scope)
 
   const getRankIcon = (rank: number) => {
     switch (rank) {
@@ -30,30 +38,24 @@ export default function RankingSidebar({ selectedMode, onModeChange }: RankingSi
     }
   }
 
-  const modeInfo = {
-    normal: { icon: '🎯', label: '일반' },
-    beginner: { icon: '🌱', label: '초보자' }
-  }
+  const fixedRankings: FixedRankingEntry[] = useMemo(() => {
+    const normalized = rankings.map(entry => ({
+      rank: entry.rank,
+      name: entry.name,
+      score: entry.score
+    }))
 
-  // 1~10등까지 고정된 순위 배열 생성
-  const getFixedRankings = (): ExtendedRankingEntry[] => {
-    const fixedRankings: ExtendedRankingEntry[] = []
+    const list: FixedRankingEntry[] = []
     for (let i = 1; i <= 10; i++) {
-      const existingEntry = rankings.find(entry => entry.rank === i)
-      if (existingEntry) {
-        fixedRankings.push(existingEntry)
+      const existing = normalized.find(item => item.rank === i)
+      if (existing) {
+        list.push(existing)
       } else {
-        fixedRankings.push({
-          rank: i,
-          username: '',
-          nickname: '',
-          score: 0,
-          isEmpty: true
-        })
+        list.push({ rank: i, name: '', score: 0, isEmpty: true })
       }
     }
-    return fixedRankings
-  }
+    return list
+  }, [rankings])
 
   return (
     <div className="w-80 bg-white bg-opacity-95 rounded-xl shadow-xl p-4 ml-4 overflow-hidden flex flex-col border-4 border-green-400">
@@ -61,27 +63,34 @@ export default function RankingSidebar({ selectedMode, onModeChange }: RankingSi
       <div className="mb-3">
         <h2 className="text-lg font-bold mb-2 text-center" style={{ color: '#ff6600' }}>🏆 랭킹</h2>
         
-        {/* 모드 탭 */}
-        <div className="flex gap-2">
-          {(['normal', 'beginner'] as GameMode[]).map((mode) => (
-            <button
-              key={mode}
-              onClick={() => onModeChange(mode)}
-              className={`flex-1 px-2 py-1.5 rounded-lg font-semibold text-xs transition-all duration-200 border-2 ${
-                selectedMode === mode
-                  ? 'text-white shadow-lg border-transparent'
-                  : 'text-gray-600 bg-white bg-opacity-80 hover:bg-opacity-100 border-gray-200 hover:border-gray-300'
-              }`}
-              style={{
-                backgroundColor: selectedMode === mode 
-                  ? (mode === 'normal' ? '#3b82f6' : '#10b981')
-                  : undefined
-              }}
-            >
-              {modeInfo[mode].icon} {modeInfo[mode].label}
-            </button>
-          ))}
+        {/* 랭킹 범위 탭 */}
+        <div className="flex gap-2" role="tablist" aria-label="랭킹 범위 전환">
+          {(Object.keys(scopeInfo) as RankingScope[]).map((scopeKey) => {
+            const isActive = scope === scopeKey
+            return (
+              <button
+                key={scopeKey}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setScope(scopeKey)}
+                className={`flex-1 px-2 py-1.5 rounded-lg font-semibold text-xs transition-all duration-200 border-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                  isActive
+                    ? 'text-white shadow-lg border-transparent focus:ring-green-200'
+                    : 'text-gray-600 bg-white bg-opacity-80 hover:bg-opacity-100 border-gray-200 hover:border-gray-300 focus:ring-green-100'
+                }`}
+                style={{
+                  backgroundColor: isActive ? scopeInfo[scopeKey].color : undefined
+                }}
+              >
+                {scopeInfo[scopeKey].label}
+              </button>
+            )
+          })}
         </div>
+        <p className="text-[11px] text-gray-500 mt-2 text-center">
+          {scopeInfo[scope].description}
+        </p>
       </div>
 
       {/* 랭킹 테이블 */}
@@ -98,7 +107,7 @@ export default function RankingSidebar({ selectedMode, onModeChange }: RankingSi
             {/* 상위 10위 (고정) */}
             <div className="overflow-y-auto">
               <div className="space-y-1">
-                {getFixedRankings().map((entry) => (
+                {fixedRankings.map((entry) => (
                   <div
                     key={entry.rank}
                     className={`flex items-center justify-between py-2 px-3 rounded-lg transition-all duration-200 border ${
@@ -122,12 +131,7 @@ export default function RankingSidebar({ selectedMode, onModeChange }: RankingSi
                           </p>
                         ) : (
                           <p className="text-xs font-semibold text-gray-800 truncate">
-                            {entry.nickname}
-                            {entry.active_title && (
-                              <span className="ml-1 text-[10px] font-medium text-indigo-700 bg-indigo-100/80 px-1.5 py-0.5 rounded-full border border-indigo-200 align-middle">
-                                {entry.active_title}
-                              </span>
-                            )}
+                            {entry.name}
                           </p>
                         )}
                       </div>
@@ -146,54 +150,11 @@ export default function RankingSidebar({ selectedMode, onModeChange }: RankingSi
               </div>
             </div>
 
-            {/* 구분선 및 내 랭킹 */}
-            {user && (
-              <div className="mt-3 pt-3 border-t-2 border-green-200">
-                {myRanking ? (
-                  <div className="bg-gradient-to-r from-blue-50 to-green-50 rounded-lg p-3 border-2 border-blue-200 shadow-md">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 text-center font-bold text-sm" style={{ color: '#ff6600' }}>
-                          {myRanking.rank}위
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold" style={{ color: '#ff6600' }}>
-                            {user.nickname} (나)
-                          </p>
-                          <p className="text-xs font-medium" style={{ color: '#00cc66' }}>
-                            전체 {myRanking.totalPlayers}명 중
-                          </p>
-                          {myRanking.active_title && (
-                            <p className="text-[10px] font-medium text-indigo-700 bg-indigo-100/80 px-2 py-0.5 rounded-full inline-block mt-1 border border-indigo-200">
-                              {myRanking.active_title}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      <div className="text-xs font-bold bg-orange-100 px-2 py-1 rounded-full" style={{ color: '#ff6600' }}>
-                        {myRanking.score}점
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="bg-gradient-to-r from-gray-50 to-green-50 rounded-lg p-3 text-center border-2 border-gray-200">
-                    <p className="text-xs font-semibold text-gray-600">아직 기록이 없습니다</p>
-                    <p className="text-xs text-gray-500 mt-1 font-medium">게임을 플레이해보세요!</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* 로그인 안내 */}
-            {!user && (
-              <div className="mt-2 pt-2 border-t border-green-200">
-                <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg p-3 text-center border-2 border-yellow-200 shadow-md">
-                  <p className="text-xs font-bold" style={{ color: '#ff6600' }}>
-                    🔑 로그인하여 랭킹 참여
-                  </p>
-                  <p className="text-xs mt-1 font-medium" style={{ color: '#00cc66' }}>
-                    내 기록을 저장하고 순위를 확인하세요
-                  </p>
+            {rankings.length === 0 && !loading && (
+              <div className="mt-3 pt-3 border-t border-green-200">
+                <div className="bg-gradient-to-r from-gray-50 to-green-50 rounded-lg p-3 text-center border-2 border-gray-200">
+                  <p className="text-xs font-semibold text-gray-600">아직 등록된 기록이 없습니다</p>
+                  <p className="text-xs text-gray-500 mt-1 font-medium">게임을 플레이하고 첫 기록을 남겨보세요!</p>
                 </div>
               </div>
             )}

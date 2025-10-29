@@ -4,9 +4,6 @@ import { useReducer, useCallback, useEffect, useRef } from 'react'
 import { GameState, GameMode, GAME_MODE_CONFIGS, GameTile } from '@/types/game'
 import { createInitialGameState } from '@/lib/game/gameLogic'
 import { hasValidMatches, shuffleExistingTiles, hasRemainingPokemon, findHintCombination } from '@/lib/game/shuffleLogic'
-import { useAuth } from '@/contexts/AuthContext'
-import { saveGameScore } from '@/lib/supabase'
-import { validateScoreSubmission, startGameSession, endGameSession, validateGameSession } from '@/utils/securityUtils'
 import { HINT_CONFIG } from '@/constants/gameConstants'
 
 // --- 1. 상태, 액션 타입 정의 ---
@@ -23,6 +20,12 @@ interface ReducerState {
   lastScoreTimestamp: number
   hintActive: boolean
   pausedFrom: GamePhase | null
+  scoreSubmission: {
+    isDialogOpen: boolean
+    playerName: string
+    status: 'idle' | 'submitting' | 'success' | 'error'
+    errorMessage: string | null
+  }
 }
 
 type Action = 
@@ -45,6 +48,10 @@ type Action =
   | { type: 'SET_HINT_ACTIVE'; active: boolean }
   | { type: 'SHOW_HINT'; tileIds: string[] }
   | { type: 'CLEAR_HINTS' }
+  | { type: 'OPEN_SCORE_DIALOG' }
+  | { type: 'CLOSE_SCORE_DIALOG' }
+  | { type: 'UPDATE_PLAYER_NAME'; name: string }
+  | { type: 'SET_SCORE_SUBMISSION_STATE'; status: 'idle' | 'submitting' | 'success' | 'error'; errorMessage?: string | null }
 
 // --- 2. 리듀서 함수 ---
 function gameReducer(state: ReducerState, action: Action): ReducerState {
@@ -142,6 +149,43 @@ function gameReducer(state: ReducerState, action: Action): ReducerState {
           )
         }
       }
+    case 'OPEN_SCORE_DIALOG':
+      return {
+        ...state,
+        scoreSubmission: {
+          ...state.scoreSubmission,
+          isDialogOpen: true,
+          status: 'idle',
+          errorMessage: null
+        }
+      }
+    case 'CLOSE_SCORE_DIALOG':
+      return {
+        ...state,
+        scoreSubmission: {
+          isDialogOpen: false,
+          playerName: '',
+          status: 'idle',
+          errorMessage: null
+        }
+      }
+    case 'UPDATE_PLAYER_NAME':
+      return {
+        ...state,
+        scoreSubmission: {
+          ...state.scoreSubmission,
+          playerName: action.name
+        }
+      }
+    case 'SET_SCORE_SUBMISSION_STATE':
+      return {
+        ...state,
+        scoreSubmission: {
+          ...state.scoreSubmission,
+          status: action.status,
+          errorMessage: action.errorMessage ?? null
+        }
+      }
     default:
       return state
   }
@@ -162,7 +206,13 @@ function getInitialState(mode: GameMode): ReducerState {
     scoreSaved: false,
     lastScoreTimestamp: Date.now(),
     hintActive: false,
-    pausedFrom: null
+    pausedFrom: null,
+    scoreSubmission: {
+      isDialogOpen: false,
+      playerName: '',
+      status: 'idle',
+      errorMessage: null
+    }
   }
 }
 
@@ -171,59 +221,65 @@ const delay = (ms: number) => new Promise(res => setTimeout(res, ms))
 // --- 4. 커스텀 훅 ---
 export function useGameState(initialMode: GameMode = 'normal') {
   const [state, dispatch] = useReducer(gameReducer, getInitialState(initialMode))
-  const { isAuthenticated, user } = useAuth()
   const hintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const { gameState, gamePhase, selectedMode, isShuffling, shuffleCount, scoreSaved, lastScoreTimestamp, hintActive } = state
+  const { gameState, gamePhase, selectedMode, isShuffling, shuffleCount, scoreSubmission, lastScoreTimestamp, hintActive } = state
   const prevScoreRef = useRef(gameState.score)
-
-  // 점수 저장
-  const handleSaveScore = useCallback(async () => {
-    if (scoreSaved) return null
-    dispatch({ type: 'SET_SCORE_SAVED', saved: true })
-
-    if (!isAuthenticated) {
-      return { success: false, score: gameState.score, isAuthenticated: false }
-    }
-
-    try {
-      // 보안 검증
-      const validation = validateScoreSubmission(
-        gameState.score,
-        selectedMode,
-        user?.id,
-        {
-          timestamp: new Date().toISOString(),
-          userAgent: navigator.userAgent,
-        }
-      )
-
-      if (!validation.valid) {
-        console.warn('Score submission validation failed:', validation.error)
-        return { success: false, score: gameState.score, isAuthenticated: true, error: validation.error }
-      }
-
-      // 게임 세션 검증
-      if (!validateGameSession()) {
-        console.warn('Invalid game session')
-        return { success: false, score: gameState.score, isAuthenticated: true, error: 'Invalid game session' }
-      }
-
-      const result = await saveGameScore(gameState.score, selectedMode)
-      return { ...result, success: true, isAuthenticated: true }
-    } catch (error) {
-      dispatch({ type: 'SET_SCORE_SAVED', saved: false })
-      return { success: false, score: gameState.score, isAuthenticated: true, error }
-    }
-  }, [gameState.score, isAuthenticated, selectedMode, scoreSaved, user?.id])
 
   // 게임 종료 (시간 초과 또는 수동)
   const endGame = useCallback(async () => {
     dispatch({ type: 'END_GAME' })
-    const result = await handleSaveScore()
-    endGameSession() // 게임 세션 종료
-    return result
-  }, [handleSaveScore])
+    dispatch({ type: 'OPEN_SCORE_DIALOG' })
+    return null
+  }, [])
+
+  const closeScoreDialog = useCallback(() => {
+    dispatch({ type: 'CLOSE_SCORE_DIALOG' })
+  }, [])
+
+  const updatePlayerName = useCallback((name: string) => {
+    dispatch({ type: 'UPDATE_PLAYER_NAME', name })
+  }, [])
+
+  const submitScore = useCallback(async () => {
+    if (scoreSubmission.status === 'submitting') return
+
+    const trimmedName = scoreSubmission.playerName.trim()
+
+    if (trimmedName.length < 2) {
+      dispatch({ type: 'SET_SCORE_SUBMISSION_STATE', status: 'error', errorMessage: '이름은 2자 이상 입력해주세요' })
+      return
+    }
+
+    if (trimmedName.length > 8) {
+      dispatch({ type: 'SET_SCORE_SUBMISSION_STATE', status: 'error', errorMessage: '이름은 최대 8자까지 가능합니다' })
+      return
+    }
+
+    dispatch({ type: 'SET_SCORE_SUBMISSION_STATE', status: 'submitting' })
+
+    try {
+      const response = await fetch('/api/scores', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: trimmedName, score: gameState.score })
+      })
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null) as { error?: string } | null
+        const message = data?.error ?? '점수를 저장하지 못했습니다'
+        dispatch({ type: 'SET_SCORE_SUBMISSION_STATE', status: 'error', errorMessage: message })
+        return
+      }
+
+      dispatch({ type: 'SET_SCORE_SUBMISSION_STATE', status: 'success' })
+      dispatch({ type: 'SET_SCORE_SAVED', saved: true })
+      window.dispatchEvent(new CustomEvent('scores:updated'))
+    } catch (error) {
+      console.error('Failed to submit score:', error)
+      dispatch({ type: 'SET_SCORE_SUBMISSION_STATE', status: 'error', errorMessage: '네트워크 오류가 발생했습니다' })
+    }
+  }, [gameState.score, scoreSubmission.playerName, scoreSubmission.status])
 
   // 자동 셔플
   const performAutoShuffle = useCallback(async () => {
@@ -307,8 +363,6 @@ export function useGameState(initialMode: GameMode = 'normal') {
   }, [dispatch])
 
   const startCountdown = useCallback(() => {
-    startGameSession() // 게임 세션 시작
-    
     // 클라이언트에서 랜덤 시드로 보드 재생성
     if (typeof window !== 'undefined') {
       const randomSeed = Date.now() + Math.random() * 1000
@@ -447,7 +501,6 @@ export function useGameState(initialMode: GameMode = 'normal') {
     checkAndShuffle,
     checkAndShuffleAfterTileRemoval,
     endGame,
-    handleSaveScore,
     changeMode,
     setSelectedMode: changeMode,
     pauseGame,
@@ -462,7 +515,11 @@ export function useGameState(initialMode: GameMode = 'normal') {
         dispatch({ type: 'SET_GAME_STATE', gameState: updater })
       }
     },
-    clearHints: clearHintsAndResetTimer
-  }
+    clearHints: clearHintsAndResetTimer,
+    scoreSubmission,
+    closeScoreDialog,
+    updatePlayerName,
+    submitScore
+  } as const
 }
  
